@@ -1,5 +1,6 @@
 #include <iostream>
 #include "Field.h"
+#include "Piece.h"
 
 namespace
 {
@@ -44,8 +45,14 @@ int main()
     Field::CreateParameter param;
     field->Create(param);
     
-    std::vector<Field::Position> pieces;
-    field->PutPieces(pieces, 4);
+    std::vector<Field::Position> positions;
+    field->PutPieces(positions, 4);
+
+    std::vector<Piece> pieces;
+    for (auto& it : positions)
+    {
+        pieces.push_back(Piece(it.x, it.y));
+    }
 
     field->Dump(Dump);
 

@@ -7,6 +7,13 @@ Piece::Piece()
 
 }
 
+Piece::Piece(const int x, const int y)
+    : m_PointX(x)
+    , m_PointY(y)
+{
+
+}
+
 Piece::~Piece()
 {
 

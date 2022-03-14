@@ -6,6 +6,7 @@ class Piece
 {
 public:
     Piece();
+    Piece(int x, int y);
     ~Piece();
 
     int32_t GetX() const { return m_PointX; }
