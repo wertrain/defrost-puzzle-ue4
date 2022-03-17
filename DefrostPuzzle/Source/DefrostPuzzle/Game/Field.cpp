@@ -4,6 +4,9 @@
 #include <iterator>
 #include <numeric>
 
+namespace game
+{
+
 Field::Field()
     : m_Field(nullptr)
     , m_Width(0)
@@ -270,3 +273,5 @@ void Field::FillField(const CellType cellType)
         }
     }
 }
+
+} // namespace game

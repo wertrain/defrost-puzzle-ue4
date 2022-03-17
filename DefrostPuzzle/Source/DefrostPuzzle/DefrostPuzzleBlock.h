@@ -6,6 +6,16 @@
 #include "GameFramework/Actor.h"
 #include "DefrostPuzzleBlock.generated.h"
 
+UENUM(BlueprintType)
+enum class EBlockType : uint8
+{
+	Rock,
+	Frozen,
+	HardFrozen,
+	Melted,
+	Num  UMETA(Hidden)
+};
+
 /** A block that can be clicked */
 UCLASS(minimalapi)
 class ADefrostPuzzleBlock : public AActor
@@ -30,6 +40,22 @@ public:
 	UPROPERTY()
 	class UMaterial* BaseMaterial;
 
+	/** Pointer to material */
+	UPROPERTY()
+	class UMaterialInstance* RockMaterial;
+
+	/** Pointer to material */
+	UPROPERTY()
+	class UMaterialInstance* FrozenMaterial;
+
+	/** Pointer to material */
+	UPROPERTY()
+	class UMaterialInstance* HardFrozenMaterial;
+
+	/** Pointer to material */
+	UPROPERTY()
+	class UMaterialInstance* MeltedMaterial;
+
 	/** Pointer to blue material used on inactive blocks */
 	UPROPERTY()
 	class UMaterialInstance* BlueMaterial;
@@ -50,9 +76,18 @@ public:
 	UFUNCTION()
 	void OnFingerPressedBlock(ETouchIndex::Type FingerIndex, UPrimitiveComponent* TouchedComponent);
 
+	/** Set the block type */
+	UFUNCTION()
+	void SetBlockType(const EBlockType BlockType);
+
 	void HandleClicked();
 
 	void Highlight(bool bOn);
+
+private:
+	/** Pointer to white material used on the focused block */
+	UPROPERTY()
+	EBlockType BlockType;
 
 public:
 	/** Returns DummyRoot subobject **/

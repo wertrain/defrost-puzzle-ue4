@@ -4,6 +4,9 @@
 #include <vector>
 #include <functional>
 
+namespace game
+{
+
 class Field
 {
 public:
@@ -83,3 +86,5 @@ private:
     std::vector<Island> m_Islands;
     int32_t m_GoalIndex;
 };
+
+} // namespace game

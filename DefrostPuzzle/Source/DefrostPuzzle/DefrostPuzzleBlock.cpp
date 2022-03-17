@@ -14,11 +14,19 @@ ADefrostPuzzleBlock::ADefrostPuzzleBlock()
 	{
 		ConstructorHelpers::FObjectFinderOptional<UStaticMesh> PlaneMesh;
 		ConstructorHelpers::FObjectFinderOptional<UMaterial> BaseMaterial;
+		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> RockMaterial;
+		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> FrozenMaterial;
+		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> HardFrozenMaterial;
+		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> MeltedMaterial;
 		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> BlueMaterial;
 		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> OrangeMaterial;
 		FConstructorStatics()
 			: PlaneMesh(TEXT("/Game/Puzzle/Meshes/PuzzleCube.PuzzleCube"))
 			, BaseMaterial(TEXT("/Game/Puzzle/Meshes/BaseMaterial.BaseMaterial"))
+			, RockMaterial(TEXT("/Game/Puzzle/Meshes/BlueMaterial.BlueMaterial"))
+			, FrozenMaterial(TEXT("/Game/Puzzle/Meshes/BlueMaterial.BlueMaterial"))
+			, HardFrozenMaterial(TEXT("/Game/Puzzle/Meshes/BlueMaterial.BlueMaterial"))
+			, MeltedMaterial(TEXT("/Game/Puzzle/Meshes/BlueMaterial.BlueMaterial"))
 			, BlueMaterial(TEXT("/Game/Puzzle/Meshes/BlueMaterial.BlueMaterial"))
 			, OrangeMaterial(TEXT("/Game/Puzzle/Meshes/OrangeMaterial.OrangeMaterial"))
 		{
@@ -30,10 +38,12 @@ ADefrostPuzzleBlock::ADefrostPuzzleBlock()
 	DummyRoot = CreateDefaultSubobject<USceneComponent>(TEXT("Dummy0"));
 	RootComponent = DummyRoot;
 
+	const float scale = .1f;
+
 	// Create static mesh component
 	BlockMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BlockMesh0"));
 	BlockMesh->SetStaticMesh(ConstructorStatics.PlaneMesh.Get());
-	BlockMesh->SetRelativeScale3D(FVector(1.f,1.f,0.25f));
+	BlockMesh->SetRelativeScale3D(FVector(1.f * scale,1.f * scale,0.25f));
 	BlockMesh->SetRelativeLocation(FVector(0.f,0.f,25.f));
 	BlockMesh->SetMaterial(0, ConstructorStatics.BlueMaterial.Get());
 	BlockMesh->SetupAttachment(DummyRoot);
@@ -55,6 +65,22 @@ void ADefrostPuzzleBlock::BlockClicked(UPrimitiveComponent* ClickedComp, FKey Bu
 void ADefrostPuzzleBlock::OnFingerPressedBlock(ETouchIndex::Type FingerIndex, UPrimitiveComponent* TouchedComponent)
 {
 	HandleClicked();
+}
+
+void ADefrostPuzzleBlock::SetBlockType(const EBlockType Type)
+{
+	BlockType = Type;
+
+	UMaterialInstance* TypeToMaterial[static_cast<uint8>(EBlockType::Num)] =
+	{
+		RockMaterial,		// Rock
+		FrozenMaterial,		// Frozen
+		HardFrozenMaterial,	// HardFrozen
+		MeltedMaterial,		// Melted
+	};
+
+	// Change material
+	BlockMesh->SetMaterial(0, TypeToMaterial[static_cast<uint8>(Type)]);
 }
 
 void ADefrostPuzzleBlock::HandleClicked()
