@@ -147,6 +147,13 @@ void Field::PutPieces(std::vector<Position>& pieces, const int putNum)
     }
 }
 
+Field::CellType Field::GetCell(const int x, const int y) const
+{
+    _ASSERT(x < m_Width&& y < m_Height);
+
+    return m_Field[y][x];
+}
+
 void Field::CreateField(const int width, const int height)
 {
     DestroyField();

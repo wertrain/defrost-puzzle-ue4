@@ -22,7 +22,10 @@ ADefrostPuzzleBlockGrid::ADefrostPuzzleBlockGrid()
 
 	// Set defaults
 	Size = 3;
+	Width = 20;
+	Height = 20;
 	BlockSpacing = 300.f;
+	Field = std::make_unique<game::Field>();
 }
 
 
@@ -30,6 +33,45 @@ void ADefrostPuzzleBlockGrid::BeginPlay()
 {
 	Super::BeginPlay();
 
+
+	game::Field::CreateParameter param;
+	Field->Create(param);
+
+	for (int32 y = 0; y < Height; ++y)
+	{
+		for (int32 x = 0; x < Width; ++x)
+		{
+			const float XOffset = x * BlockSpacing;
+			const float YOffset = y * BlockSpacing;
+
+			// Make position vector, offset from Grid location
+			const FVector BlockLocation = FVector(XOffset, YOffset, 0.f) + GetActorLocation();
+
+			// Spawn a block
+			ADefrostPuzzleBlock* NewBlock = GetWorld()->SpawnActor<ADefrostPuzzleBlock>(BlockLocation, FRotator(0, 0, 0));
+
+			// Tell the block about its owner
+			if (NewBlock != nullptr)
+			{
+				NewBlock->OwningGrid = this;
+
+				switch (Field->GetCell(x, y))
+				{
+				case game::Field::CellType::Block:
+					NewBlock->SetBlockType(EBlockType::Rock);
+					break;
+				case game::Field::CellType::Frozen:
+					NewBlock->SetBlockType(EBlockType::Frozen);
+					break;
+				case game::Field::CellType::HardFrozen:
+					NewBlock->SetBlockType(EBlockType::HardFrozen);
+					break;
+				}
+			}
+		}
+	}
+
+#if 0
 	// Number of blocks
 	const int32 NumBlocks = Size * Size;
 
@@ -51,6 +93,7 @@ void ADefrostPuzzleBlockGrid::BeginPlay()
 			NewBlock->OwningGrid = this;
 		}
 	}
+#endif
 }
 
 

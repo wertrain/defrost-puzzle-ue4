@@ -54,6 +54,7 @@ public:
     void Destroy();
     void Dump(std::function<void(const CellType**, int, int)> dumper);
     void PutPieces(std::vector<Position>& pieces, int putNum);
+    CellType GetCell(int x, int y) const;
 
 private:
     void CreateField(int width, int height);

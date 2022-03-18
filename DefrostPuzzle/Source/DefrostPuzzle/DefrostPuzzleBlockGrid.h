@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <memory>
+#include "Game/Field.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "DefrostPuzzleBlockGrid.generated.h"
@@ -30,6 +32,14 @@ public:
 	UPROPERTY(Category=Grid, EditAnywhere, BlueprintReadOnly)
 	int32 Size;
 
+	/** Width of blocks along each side of grid */
+	UPROPERTY(Category=Grid, EditAnywhere, BlueprintReadOnly)
+	int32 Width;
+
+	/** Height of blocks along each side of grid */
+	UPROPERTY(Category=Grid, EditAnywhere, BlueprintReadOnly)
+	int32 Height;
+
 	/** Spacing of blocks */
 	UPROPERTY(Category=Grid, EditAnywhere, BlueprintReadOnly)
 	float BlockSpacing;
@@ -48,6 +58,9 @@ public:
 	FORCEINLINE class USceneComponent* GetDummyRoot() const { return DummyRoot; }
 	/** Returns ScoreText subobject **/
 	FORCEINLINE class UTextRenderComponent* GetScoreText() const { return ScoreText; }
+
+private:
+	std::unique_ptr<game::Field> Field;
 };
 
 
