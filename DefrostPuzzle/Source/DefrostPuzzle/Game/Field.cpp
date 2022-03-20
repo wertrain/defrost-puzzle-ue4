@@ -261,7 +261,7 @@ void Field::CreateIsland(const int islandNum)
 
     // 小島からスタート＆ゴールを決定
     {
-        std::vector<int> v(4);
+        std::vector<int> v(islandNum);
         std::iota(v.begin(), v.end(), 0);
         std::shuffle(v.begin(), v.end(), mt);
 

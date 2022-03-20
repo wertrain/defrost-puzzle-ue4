@@ -80,6 +80,10 @@ public:
 	UFUNCTION()
 	void SetBlockType(const EBlockType BlockType);
 
+	/** Get the block type */
+	UFUNCTION()
+	EBlockType GetBlockType() const;
+
 	void HandleClicked();
 
 	void Highlight(bool bOn);

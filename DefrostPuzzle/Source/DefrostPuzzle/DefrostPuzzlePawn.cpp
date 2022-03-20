@@ -2,21 +2,41 @@
 
 #include "DefrostPuzzlePawn.h"
 #include "DefrostPuzzleBlock.h"
+#include "DefrostPuzzleBlockGrid.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 
 ADefrostPuzzlePawn::ADefrostPuzzlePawn(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer)
 {
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
+	PuzzleBlockGrid = nullptr;
+	CurrentPieceIndex = 0;
+	CurrentPieceDirection = EPuzzleDirection::Up;
 }
 
 void ADefrostPuzzlePawn::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	if (PuzzleBlockGrid)
+	{
+		PuzzleBlockGrid->SetHighlightDirection(CurrentPieceIndex, CurrentPieceDirection);
+	}
+	else
+	{
+		TArray<AActor*> FoundActors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ADefrostPuzzleBlockGrid::StaticClass(), FoundActors);
+
+		if (FoundActors.Num() > 0)
+		{
+			PuzzleBlockGrid = Cast<ADefrostPuzzleBlockGrid>(FoundActors[0]);
+		}
+	}
 
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
@@ -76,6 +96,7 @@ void ADefrostPuzzlePawn::TraceForBlock(const FVector& Start, const FVector& End,
 		DrawDebugLine(GetWorld(), Start, HitResult.Location, FColor::Red);
 		DrawDebugSolidBox(GetWorld(), HitResult.Location, FVector(20.0f), FColor::Red);
 	}
+#if 0
 	if (HitResult.Actor.IsValid())
 	{
 		ADefrostPuzzleBlock* HitBlock = Cast<ADefrostPuzzleBlock>(HitResult.Actor.Get());
@@ -97,4 +118,21 @@ void ADefrostPuzzlePawn::TraceForBlock(const FVector& Start, const FVector& End,
 		CurrentBlockFocus->Highlight(false);
 		CurrentBlockFocus = nullptr;
 	}
+#else
+	if (HitResult.Actor.IsValid())
+	{
+		ADefrostPuzzleBlock* HitBlock = Cast<ADefrostPuzzleBlock>(HitResult.Actor.Get());
+		auto hitPosition = PuzzleBlockGrid->GetPuzzleBlockPosition(HitBlock);
+		const int hitX = std::get<0>(hitPosition), hitY = std::get<1>(hitPosition);
+		auto piece = PuzzleBlockGrid->GetPieces()[CurrentPieceIndex];
+		if (hitX == piece.x)
+		{
+			CurrentPieceDirection = (hitY < piece.y) ? EPuzzleDirection::Up : EPuzzleDirection::Down;
+		}
+		else
+		{
+			CurrentPieceDirection = (hitX < piece.x) ? EPuzzleDirection::Left : EPuzzleDirection::Right;
+		}
+	}
+#endif
 }

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "DefrostPuzzleTypes.h"
 #include "DefrostPuzzlePawn.generated.h"
 
 UCLASS(config=Game)
@@ -26,4 +27,9 @@ protected:
 
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite)
 	class ADefrostPuzzleBlock* CurrentBlockFocus;
+
+private:
+	class ADefrostPuzzleBlockGrid* PuzzleBlockGrid;
+	int32 CurrentPieceIndex;
+	EPuzzleDirection CurrentPieceDirection;
 };

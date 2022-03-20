@@ -21,14 +21,14 @@ ADefrostPuzzleBlock::ADefrostPuzzleBlock()
 		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> BlueMaterial;
 		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> OrangeMaterial;
 		FConstructorStatics()
-			: PlaneMesh(TEXT("/Game/Puzzle/Meshes/PuzzleCube.PuzzleCube"))
-			, BaseMaterial(TEXT("/Game/Puzzle/Meshes/BaseMaterial.BaseMaterial"))
-			, RockMaterial(TEXT("/Game/Puzzle/Meshes/BlueMaterial.RockMaterial"))
-			, FrozenMaterial(TEXT("/Game/Puzzle/Meshes/BlueMaterial.FrozenMaterial"))
-			, HardFrozenMaterial(TEXT("/Game/Puzzle/Meshes/BlueMaterial.FrozenMaterial"))
-			, MeltedMaterial(TEXT("/Game/Puzzle/Meshes/BlueMaterial.OrangeMaterial"))
-			, BlueMaterial(TEXT("/Game/Puzzle/Meshes/BlueMaterial.BlueMaterial"))
-			, OrangeMaterial(TEXT("/Game/Puzzle/Meshes/OrangeMaterial.OrangeMaterial"))
+			: PlaneMesh(TEXT("/Game/Puzzle/Meshes/SM_PuzzleCube.SM_PuzzleCube"))
+			, BaseMaterial(TEXT("/Game/Puzzle/Meshes/M_CubeBase.M_CubeBase"))
+			, RockMaterial(TEXT("/Game/Puzzle/Meshes/MI_CubeRock.MI_CubeRock"))
+			, FrozenMaterial(TEXT("/Game/Puzzle/Meshes/MI_CubeFrozen.MI_CubeFrozen"))
+			, HardFrozenMaterial(TEXT("/Game/Puzzle/Meshes/MI_CubeFrozen.MI_CubeFrozen"))
+			, MeltedMaterial(TEXT("/Game/Puzzle/Meshes/MI_CubeOrange.MI_CubeOrange"))
+			, BlueMaterial(TEXT("/Game/Puzzle/Meshes/MI_CubeBlue.MI_CubeBlue"))
+			, OrangeMaterial(TEXT("/Game/Puzzle/Meshes/MI_CubeOrange.MI_CubeOrange"))
 		{
 		}
 	};
@@ -38,22 +38,26 @@ ADefrostPuzzleBlock::ADefrostPuzzleBlock()
 	DummyRoot = CreateDefaultSubobject<USceneComponent>(TEXT("Dummy0"));
 	RootComponent = DummyRoot;
 
-	const float scale = .1f;
+	const float scale = 1.f / 256.f;
 
 	// Create static mesh component
 	BlockMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BlockMesh0"));
 	BlockMesh->SetStaticMesh(ConstructorStatics.PlaneMesh.Get());
-	BlockMesh->SetRelativeScale3D(FVector(1.f * scale,1.f * scale,0.25f));
-	BlockMesh->SetRelativeLocation(FVector(0.f,0.f,25.f));
+	BlockMesh->SetRelativeScale3D(FVector(1.f * scale,1.f * scale, 1.f * scale));
+	BlockMesh->SetRelativeLocation(FVector(0.f,0.f,0.f));
 	BlockMesh->SetMaterial(0, ConstructorStatics.BlueMaterial.Get());
 	BlockMesh->SetupAttachment(DummyRoot);
-	BlockMesh->OnClicked.AddDynamic(this, &ADefrostPuzzleBlock::BlockClicked);
-	BlockMesh->OnInputTouchBegin.AddDynamic(this, &ADefrostPuzzleBlock::OnFingerPressedBlock);
+	//BlockMesh->OnClicked.AddDynamic(this, &ADefrostPuzzleBlock::BlockClicked);
+	//BlockMesh->OnInputTouchBegin.AddDynamic(this, &ADefrostPuzzleBlock::OnFingerPressedBlock);
 
 	// Save a pointer to the orange material
 	BaseMaterial = ConstructorStatics.BaseMaterial.Get();
 	BlueMaterial = ConstructorStatics.BlueMaterial.Get();
 	OrangeMaterial = ConstructorStatics.OrangeMaterial.Get();
+	RockMaterial = ConstructorStatics.RockMaterial.Get();
+	FrozenMaterial = ConstructorStatics.FrozenMaterial.Get();
+	HardFrozenMaterial = ConstructorStatics.HardFrozenMaterial.Get();
+	MeltedMaterial = ConstructorStatics.MeltedMaterial.Get();
 }
 
 void ADefrostPuzzleBlock::BlockClicked(UPrimitiveComponent* ClickedComp, FKey ButtonClicked)
@@ -81,6 +85,11 @@ void ADefrostPuzzleBlock::SetBlockType(const EBlockType Type)
 
 	// Change material
 	BlockMesh->SetMaterial(0, TypeToMaterial[static_cast<uint8>(Type)]);
+}
+
+EBlockType ADefrostPuzzleBlock::GetBlockType() const
+{
+	return BlockType;
 }
 
 void ADefrostPuzzleBlock::HandleClicked()
@@ -115,6 +124,7 @@ void ADefrostPuzzleBlock::Highlight(bool bOn)
 	}
 	else
 	{
-		BlockMesh->SetMaterial(0, BlueMaterial);
+		//BlockMesh->SetMaterial(0, BlueMaterial);
+		BlockMesh->SetMaterial(0, FrozenMaterial);
 	}
 }
