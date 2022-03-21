@@ -21,7 +21,7 @@ ADefrostPuzzlePiece::ADefrostPuzzlePiece()
 	static FConstructorStatics ConstructorStatics;
 
 	// Create static mesh component
-	const float scale = 0.01f;
+	const float scale = 0.1f;
 	PieceMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PenguinMesh0"));
 	PieceMesh->SetStaticMesh(ConstructorStatics.PlaneMesh.Get());
 	PieceMesh->SetRelativeScale3D(FVector(1.f * scale, 1.f * scale, 1.f * scale));

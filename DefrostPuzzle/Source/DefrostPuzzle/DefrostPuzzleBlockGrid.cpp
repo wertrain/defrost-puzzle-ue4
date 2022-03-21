@@ -29,6 +29,23 @@ ADefrostPuzzleBlockGrid::ADefrostPuzzleBlockGrid()
 	Field = std::make_unique<game::Field>();
 }
 
+void ADefrostPuzzleBlockGrid::UpdatePuzzlePiecesMesh()
+{
+	const float blockWidth = 10.f, blockHeighg = 10.f;
+	int32 amountWidth = (Width * blockWidth) * .5f;
+	int32 amountHeight = (Height * blockHeighg) * .5f;
+
+	for (int index = 0; index < PuzzlePieces.Num(); ++index)
+	{
+		auto piece = PiecePositions[index];
+		const float XOffset = piece.x * BlockSpacing;
+		const float YOffset = piece.y * BlockSpacing;
+
+		const FVector PieceLocation = FVector(amountHeight - YOffset, -amountWidth + XOffset, 40.f) + GetActorLocation();
+
+		PuzzlePieces[index]->SetActorLocation(PieceLocation);
+	}
+}
 
 void ADefrostPuzzleBlockGrid::BeginPlay()
 {
@@ -39,7 +56,7 @@ void ADefrostPuzzleBlockGrid::BeginPlay()
 	param.height = Height;
 	Field->Create(param);
 
-	const float blockWidth = 1.f, blockHeighg = 1.f;
+	const float blockWidth = 10.f, blockHeighg = 10.f;
 	int32 amountWidth = (Width * blockWidth) * .5f;
 	int32 amountHeight = (Height * blockHeighg) * .5f;
 
@@ -94,7 +111,7 @@ void ADefrostPuzzleBlockGrid::BeginPlay()
 		const float XOffset = piece.x * BlockSpacing;
 		const float YOffset = piece.y * BlockSpacing;
 
-		const FVector PieceLocation = FVector(amountHeight - YOffset, -amountWidth + XOffset, 0.f) + GetActorLocation();
+		const FVector PieceLocation = FVector(amountHeight - YOffset, -amountWidth + XOffset, 40.f) + GetActorLocation();
 		ADefrostPuzzlePiece* NewPiece = GetWorld()->SpawnActor<ADefrostPuzzlePiece>(PieceLocation, FRotator(0, 0, 0));
 		PuzzlePieces.Add(NewPiece);
 
@@ -178,7 +195,7 @@ ADefrostPuzzleBlock* ADefrostPuzzleBlockGrid::GetPuzzleBlock(const int index)
 	return PuzzleBlocks[index];
 }
 
-int32 ADefrostPuzzleBlockGrid::GetPuzzleBlockIndex(class ADefrostPuzzleBlock* Block) const
+int32 ADefrostPuzzleBlockGrid::GetPuzzleBlockIndex(const ADefrostPuzzleBlock* Block) const
 {
 	for (int32 index = 0, size = Height * Width; index < size; ++index)
 	{
@@ -190,7 +207,7 @@ int32 ADefrostPuzzleBlockGrid::GetPuzzleBlockIndex(class ADefrostPuzzleBlock* Bl
 	return -1;
 }
 
-std::pair<int32, int32> ADefrostPuzzleBlockGrid::GetPuzzleBlockPosition(class ADefrostPuzzleBlock* Block) const
+std::pair<int32, int32> ADefrostPuzzleBlockGrid::GetPuzzleBlockPosition(const ADefrostPuzzleBlock* Block) const
 {
 	for (int32 y = 0; y < Height; ++y)
 	{
@@ -205,6 +222,18 @@ std::pair<int32, int32> ADefrostPuzzleBlockGrid::GetPuzzleBlockPosition(class AD
 		}
 	}
 	return std::pair<int32, int32>(-1, -1);
+}
+
+int ADefrostPuzzleBlockGrid::GetPuzzlePieceIndex(const ADefrostPuzzlePiece* Piece) const
+{
+	for (int32 index = 0; index < PuzzlePieces.Num(); ++index)
+	{
+		if (PuzzlePieces[index] == Piece)
+		{
+			return index;
+		}
+	}
+	return -1;
 }
 
 const std::vector<game::Field::Position>& ADefrostPuzzleBlockGrid::GetPieces() const
@@ -264,7 +293,8 @@ void ADefrostPuzzleBlockGrid::SetHighlightDirection(const int PieceIndex, const 
 	}
 
 	std::vector<ADefrostPuzzleBlock*> blocks;
-	ADefrostPuzzleBlockGrid::GetPuzzleBlocks(PieceIndex, Direction, blocks);
+	bool isGoal = false;
+	ADefrostPuzzleBlockGrid::GetPuzzleBlockLine(PieceIndex, Direction, blocks, isGoal);
 
 	for (auto& block : blocks)
 	{
@@ -273,12 +303,15 @@ void ADefrostPuzzleBlockGrid::SetHighlightDirection(const int PieceIndex, const 
 #endif
 }
 
-void ADefrostPuzzleBlockGrid::MovePiece(const int PieceIndex, const EPuzzleDirection Direction)
+bool ADefrostPuzzleBlockGrid::MovePiece(const int PieceIndex, const EPuzzleDirection Direction)
 {
 	std::vector<ADefrostPuzzleBlock*> blocks;
-	auto pair = ADefrostPuzzleBlockGrid::GetPuzzleBlocks(PieceIndex, Direction, blocks);
+	bool isGoal = false;
+	auto pair = ADefrostPuzzleBlockGrid::GetPuzzleBlockLine(PieceIndex, Direction, blocks, isGoal);
 
 	PiecePositions[PieceIndex] = game::Field::Position(std::get<0>(pair), std::get<1>(pair));
+
+	return (PieceIndex == 0) && isGoal;
 }
 
 void ADefrostPuzzleBlockGrid::ResetPiece()
@@ -286,7 +319,17 @@ void ADefrostPuzzleBlockGrid::ResetPiece()
 	copy(DefaultPiecePositions.begin(), DefaultPiecePositions.end(), PiecePositions.begin());
 }
 
-std::pair<int32, int32> ADefrostPuzzleBlockGrid::GetPuzzleBlocks(const int PieceIndex, const EPuzzleDirection Direction, std::vector<class ADefrostPuzzleBlock*>& OutList)
+bool ADefrostPuzzleBlockGrid::IsGoal(const int Index) const
+{
+	return Field->GetCell(Index % Width, Index / Width) == game::Field::CellType::Goal;
+}
+
+void ADefrostPuzzleBlockGrid::AddListener(IDefrostPuzzleBlockGridListener* Listener)
+{
+	Listeners.AddUnique(Listener);
+}
+
+std::pair<int32, int32> ADefrostPuzzleBlockGrid::GetPuzzleBlockLine(const int PieceIndex, const EPuzzleDirection Direction, std::vector<class ADefrostPuzzleBlock*>& OutList, bool& OutIsGoal)
 {
 	auto start = PiecePositions[PieceIndex];
 
@@ -312,6 +355,7 @@ std::pair<int32, int32> ADefrostPuzzleBlockGrid::GetPuzzleBlocks(const int Piece
 		{
 			const int32 index = (y * Width) + start.x;
 
+			OutIsGoal = IsGoal(index);
 			if (checkPieces(start.x, y) || PuzzleBlocks[index]->GetBlockType() != EBlockType::Frozen)
 			{
 				break;
@@ -326,6 +370,7 @@ std::pair<int32, int32> ADefrostPuzzleBlockGrid::GetPuzzleBlocks(const int Piece
 		{
 			const int32 index = (y * Width) + start.x;
 
+			OutIsGoal = IsGoal(index);
 			if (checkPieces(start.x, y) || PuzzleBlocks[index]->GetBlockType() != EBlockType::Frozen)
 			{
 				break;
@@ -340,6 +385,7 @@ std::pair<int32, int32> ADefrostPuzzleBlockGrid::GetPuzzleBlocks(const int Piece
 		{
 			const int32 index = (start.y * Width) + x;
 
+			OutIsGoal = IsGoal(index);
 			if (checkPieces(x, start.y) || PuzzleBlocks[index]->GetBlockType() != EBlockType::Frozen)
 			{
 				break;
@@ -354,6 +400,7 @@ std::pair<int32, int32> ADefrostPuzzleBlockGrid::GetPuzzleBlocks(const int Piece
 		{
 			const int32 index = (start.y * Width) + x;
 
+			OutIsGoal = IsGoal(index);
 			if (checkPieces(x, start.y) || PuzzleBlocks[index]->GetBlockType() != EBlockType::Frozen)
 			{
 				break;
@@ -370,25 +417,23 @@ std::pair<int32, int32> ADefrostPuzzleBlockGrid::GetPuzzleBlocks(const int Piece
 void ADefrostPuzzleBlockGrid::BlockMeshClicked(UPrimitiveComponent* ClickedComponent, FKey ButtonClicked)
 {
 	auto* hitBlock = ClickedComponent->GetOwner<ADefrostPuzzleBlock>();
-	auto hitPosition = GetPuzzleBlockPosition(hitBlock);
-	const int hitX = std::get<0>(hitPosition), hitY = std::get<1>(hitPosition);
-	auto piece = PiecePositions[0];
 
-	EPuzzleDirection direction;
-	if (hitX == piece.x)
+	for (const auto& listener : Listeners)
 	{
-		direction = (hitY < piece.y) ? EPuzzleDirection::Up : EPuzzleDirection::Down;
+		listener->OnBlockMeshClicked(hitBlock, GetPuzzleBlockPosition(hitBlock), GetPuzzleBlockIndex(hitBlock));
 	}
-	else
-	{
-		direction = (hitX < piece.x) ? EPuzzleDirection::Left : EPuzzleDirection::Right;
-	}
-	MovePiece(0, direction);
 }
 
 void ADefrostPuzzleBlockGrid::PieceMeshClicked(UPrimitiveComponent* ClickedComponent, FKey ButtonClicked)
 {
+	auto* hitPiece = ClickedComponent->GetOwner<ADefrostPuzzlePiece>();
+	auto hitIndex = GetPuzzlePieceIndex(hitPiece);	
 
+	for (const auto& listener : Listeners)
+	{
+		listener->OnPieceMeshClicked(hitPiece, std::pair<int32, int32>(
+			PiecePositions[hitIndex].x,PiecePositions[hitIndex].y), hitIndex);
+	}
 }
 
 void ADefrostPuzzleBlockGrid::OnFingerPressedBlock(ETouchIndex::Type FingerIndex, UPrimitiveComponent* TouchedComponent)

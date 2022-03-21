@@ -38,7 +38,7 @@ ADefrostPuzzleBlock::ADefrostPuzzleBlock()
 	DummyRoot = CreateDefaultSubobject<USceneComponent>(TEXT("Dummy0"));
 	RootComponent = DummyRoot;
 
-	const float scale = 1.f / 256.f;
+	const float scale = 10.f / 256.f;
 
 	// Create static mesh component
 	BlockMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BlockMesh0"));

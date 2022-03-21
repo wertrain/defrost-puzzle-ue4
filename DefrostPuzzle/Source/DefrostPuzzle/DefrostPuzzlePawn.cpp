@@ -35,6 +35,7 @@ void ADefrostPuzzlePawn::Tick(float DeltaSeconds)
 		if (FoundActors.Num() > 0)
 		{
 			PuzzleBlockGrid = Cast<ADefrostPuzzleBlockGrid>(FoundActors[0]);
+			PuzzleBlockGrid->AddListener(this);
 		}
 	}
 
@@ -135,4 +136,28 @@ void ADefrostPuzzlePawn::TraceForBlock(const FVector& Start, const FVector& End,
 		}
 	}
 #endif
+}
+
+void ADefrostPuzzlePawn::OnBlockMeshClicked(ADefrostPuzzleBlock* ClickedBlock, const std::pair<int32, int32>& position, const int index)
+{
+	const int hitX = std::get<0>(position), hitY = std::get<1>(position);
+	auto piece = PuzzleBlockGrid->GetPieces()[CurrentPieceIndex];
+
+	if (hitX == piece.x)
+	{
+		CurrentPieceDirection = (hitY < piece.y) ? EPuzzleDirection::Up : EPuzzleDirection::Down;
+	}
+	else
+	{
+		CurrentPieceDirection = (hitX < piece.x) ? EPuzzleDirection::Left : EPuzzleDirection::Right;
+	}
+
+	PuzzleBlockGrid->MovePiece(CurrentPieceIndex, CurrentPieceDirection);
+	PuzzleBlockGrid->UpdatePuzzlePiecesMesh();
+	PuzzleBlockGrid->AddScore();
+}
+
+void ADefrostPuzzlePawn::OnPieceMeshClicked(ADefrostPuzzlePiece* ClickedPiece, const std::pair<int32, int32>& position, const int index)
+{
+	CurrentPieceIndex = index;
 }
