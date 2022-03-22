@@ -50,7 +50,7 @@ public:
 	float BlockSpacing;
 
 public:
-	UFUNCTION(BlueprintCallable, Category = Grid)
+	UFUNCTION(BlueprintCallable, Category=Grid)
 	void UpdatePuzzlePiecesMesh();
 
 protected:
@@ -64,17 +64,26 @@ public:
 	/** Handle the block being clicked */
 	void AddScore();
 
+	// 指定された位置（x, y）のブロックを取得
 	class ADefrostPuzzleBlock* GetPuzzleBlock(const int x, const int y);
+	// 指定されたインデックスのブロックを取得
 	class ADefrostPuzzleBlock* GetPuzzleBlock(const int index);
 	int32 GetPuzzleBlockIndex(const class ADefrostPuzzleBlock* Block) const;
+	// 指定されたブロックの位置（x, y）を取得
 	std::pair<int32, int32> GetPuzzleBlockPosition(const class ADefrostPuzzleBlock* Block) const;
+	// 指定されたピースのインデックスを取得
 	int32 GetPuzzlePieceIndex(const class ADefrostPuzzlePiece* Piece) const;
+	// すべてのピースを取得
 	const std::vector<game::Field::Position>& GetPieces() const;
+	// 指定されたインデックスのピースから、指定された方向のブロックにハイライトを設定
 	void SetHighlightDirection(const int PieceIndex, const EPuzzleDirection Direction);
+	// 指定されたインデックスのピースを、指定された方向に移動
 	bool MovePiece(const int PieceIndex, const EPuzzleDirection Direction);
+	// すべてのピースを初期位置に戻す
 	void ResetPiece();
+	// 指定されたインデックスがゴールかを判定
 	bool IsGoal(const int Index) const;
-
+	// リスナーを追加
 	void AddListener(IDefrostPuzzleBlockGridListener* Listener);
 
 	/** Returns DummyRoot subobject **/
@@ -83,6 +92,7 @@ public:
 	FORCEINLINE class UTextRenderComponent* GetScoreText() const { return ScoreText; }
 
 private:
+	// ピースが配置されている位置から、指定方向のブロックを取得する、最終位置がゴールに到達しているかも判断できる（盛りだくさん）
 	std::pair<int32, int32> GetPuzzleBlockLine(const int PieceIndex, const EPuzzleDirection Direction, std::vector<class ADefrostPuzzleBlock*>& OutList, bool &OutIsGoal);
 	
 	UFUNCTION()

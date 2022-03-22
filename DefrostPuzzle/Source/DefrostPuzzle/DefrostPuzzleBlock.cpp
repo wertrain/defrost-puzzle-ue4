@@ -7,6 +7,8 @@
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInstance.h"
 
+const float ADefrostPuzzleBlock::BlockSize = 10.f;
+
 ADefrostPuzzleBlock::ADefrostPuzzleBlock()
 {
 	// Structure to hold one-time initialization
@@ -38,7 +40,8 @@ ADefrostPuzzleBlock::ADefrostPuzzleBlock()
 	DummyRoot = CreateDefaultSubobject<USceneComponent>(TEXT("Dummy0"));
 	RootComponent = DummyRoot;
 
-	const float scale = 10.f / 256.f;
+	const float puzzleCubeMeshSize = 256.f;
+	const float scale = BlockSize / puzzleCubeMeshSize;
 
 	// Create static mesh component
 	BlockMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BlockMesh0"));

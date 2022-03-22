@@ -31,9 +31,8 @@ ADefrostPuzzleBlockGrid::ADefrostPuzzleBlockGrid()
 
 void ADefrostPuzzleBlockGrid::UpdatePuzzlePiecesMesh()
 {
-	const float blockWidth = 10.f, blockHeighg = 10.f;
-	int32 amountWidth = (Width * blockWidth) * .5f;
-	int32 amountHeight = (Height * blockHeighg) * .5f;
+	const float blockWidth = ADefrostPuzzleBlock::BlockSize, blockHeighg = ADefrostPuzzleBlock::BlockSize;
+	const int32 amountWidth = (Width * blockWidth) * .5f, amountHeight = (Height * blockHeighg) * .5f;
 
 	for (int index = 0; index < PuzzlePieces.Num(); ++index)
 	{
@@ -56,9 +55,8 @@ void ADefrostPuzzleBlockGrid::BeginPlay()
 	param.height = Height;
 	Field->Create(param);
 
-	const float blockWidth = 10.f, blockHeighg = 10.f;
-	int32 amountWidth = (Width * blockWidth) * .5f;
-	int32 amountHeight = (Height * blockHeighg) * .5f;
+	const float blockWidth = ADefrostPuzzleBlock::BlockSize, blockHeighg = ADefrostPuzzleBlock::BlockSize;
+	const int32 amountWidth = (Width * blockWidth) * .5f, amountHeight = (Height * blockHeighg) * .5f;
 
 	for (int32 y = 0; y < Height; ++y)
 	{
@@ -105,7 +103,7 @@ void ADefrostPuzzleBlockGrid::BeginPlay()
 	DefaultPiecePositions.reserve(PiecePositions.size());
 	copy(PiecePositions.begin(), PiecePositions.end(), DefaultPiecePositions.begin());
 
-	// Spawn a Piece
+	// Spawn Pieces
 	for (auto& piece : PiecePositions)
 	{
 		const float XOffset = piece.x * BlockSpacing;

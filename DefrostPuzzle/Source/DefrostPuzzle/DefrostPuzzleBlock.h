@@ -33,6 +33,8 @@ class ADefrostPuzzleBlock : public AActor
 public:
 	ADefrostPuzzleBlock();
 
+	static const float BlockSize;
+
 	/** Are we currently active? */
 	bool bIsActive;
 
