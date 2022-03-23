@@ -40,7 +40,7 @@ void ADefrostPuzzleBlockGrid::UpdatePuzzlePiecesMesh()
 		const float XOffset = piece.x * BlockSpacing;
 		const float YOffset = piece.y * BlockSpacing;
 
-		const FVector PieceLocation = FVector(amountHeight - YOffset, -amountWidth + XOffset, 40.f) + GetActorLocation();
+		const FVector PieceLocation = FVector(amountHeight - YOffset, -amountWidth + XOffset, ADefrostPuzzleBlock::BlockSize) + GetActorLocation();
 
 		PuzzlePieces[index]->SetActorLocation(PieceLocation);
 	}
@@ -109,7 +109,7 @@ void ADefrostPuzzleBlockGrid::BeginPlay()
 		const float XOffset = piece.x * BlockSpacing;
 		const float YOffset = piece.y * BlockSpacing;
 
-		const FVector PieceLocation = FVector(amountHeight - YOffset, -amountWidth + XOffset, 40.f) + GetActorLocation();
+		const FVector PieceLocation = FVector(amountHeight - YOffset, -amountWidth + XOffset, ADefrostPuzzleBlock::BlockSize) + GetActorLocation();
 		ADefrostPuzzlePiece* NewPiece = GetWorld()->SpawnActor<ADefrostPuzzlePiece>(PieceLocation, FRotator(0, 0, 0));
 		PuzzlePieces.Add(NewPiece);
 
@@ -118,7 +118,6 @@ void ADefrostPuzzleBlockGrid::BeginPlay()
 			staticMesh->OnClicked.AddDynamic(this, &ADefrostPuzzleBlockGrid::PieceMeshClicked);
 		}
 	}
-
 
 	Field->Dump([&](const game::Field::CellType** cells, const int width, const int height)
 	{

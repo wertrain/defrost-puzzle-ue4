@@ -12,9 +12,11 @@ ADefrostPuzzlePiece::ADefrostPuzzlePiece()
 	// Structure to hold one-time initialization
 	struct FConstructorStatics
 	{
-		ConstructorHelpers::FObjectFinderOptional<UStaticMesh> PlaneMesh;
+		ConstructorHelpers::FObjectFinderOptional<USkeletalMesh> PlaneMesh;
+		ConstructorHelpers::FObjectFinderOptional<UAnimBlueprint> AnimBlueprint;
 		FConstructorStatics()
-			: PlaneMesh(TEXT("/Game/Puzzle/Meshes/SM_Penguin.SM_Penguin"))
+			: PlaneMesh(TEXT("/Game/Puzzle/Meshes/SK_Penguin.SK_Penguin"))
+			, AnimBlueprint(TEXT("/Game/Puzzle/Meshes/ABP_Penguin.ABP_Penguin"))
 		{
 		}
 	};
@@ -22,14 +24,16 @@ ADefrostPuzzlePiece::ADefrostPuzzlePiece()
 
 	// Create static mesh component
 	const float scale = 0.1f;
-	PieceMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PenguinMesh0"));
-	PieceMesh->SetStaticMesh(ConstructorStatics.PlaneMesh.Get());
+	PieceMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("PenguinMesh0"));
+	PieceMesh->SetSkeletalMesh(ConstructorStatics.PlaneMesh.Get());
 	PieceMesh->SetRelativeScale3D(FVector(1.f * scale, 1.f * scale, 1.f * scale));
 	PieceMesh->SetRelativeLocation(FVector(0.f, 0.f, 1.f));
 	//PieceMesh->SetMaterial(0, ConstructorStatics.BlueMaterial.Get());
 	//PieceMesh->SetupAttachment(DummyRoot);
 	//PieceMesh->OnClicked.AddDynamic(this, &ADefrostPuzzleBlock::BlockClicked);
 	//PieceMesh->OnInputTouchBegin.AddDynamic(this, &ADefrostPuzzleBlock::OnFingerPressedBlock);
+
+	PieceMesh->SetAnimInstanceClass(ConstructorStatics.AnimBlueprint.Get()->GeneratedClass);
 }
 
 // Called when the game starts or when spawned

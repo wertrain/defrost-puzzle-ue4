@@ -16,8 +16,8 @@ public:
 	ADefrostPuzzlePiece();
 
 	// StaticMesh component 
-	UPROPERTY(Category = Piece, VisibleDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	class UStaticMeshComponent* PieceMesh;
+	UPROPERTY(Category=Piece, VisibleDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+	class USkeletalMeshComponent* PieceMesh;
 
 protected:
 	// Called when the game starts or when spawned
@@ -32,5 +32,5 @@ public:
 
 public:
 	// Returns BlockMesh subobject
-	FORCEINLINE class UStaticMeshComponent* GetPieceMesh() const { return PieceMesh; }
+	FORCEINLINE class USkeletalMeshComponent* GetPieceMesh() const { return PieceMesh; }
 };
