@@ -27,6 +27,7 @@ ADefrostPuzzleBlockGrid::ADefrostPuzzleBlockGrid()
 	Height = 20;
 	BlockSpacing = 300.f;
 	Field = std::make_unique<game::Field>();
+	Sequence = ESequence::Nop;
 }
 
 void ADefrostPuzzleBlockGrid::UpdatePuzzlePiecesMesh()
@@ -155,6 +156,19 @@ void ADefrostPuzzleBlockGrid::BeginPlay()
 		}
 	}
 #endif
+}
+
+void ADefrostPuzzleBlockGrid::Tick(float DeltaSeconds)
+{
+	switch (Sequence)
+	{
+	case ESequence::Nop:
+		break;
+	case ESequence::MovePiece:
+		break;
+	default:
+		break;
+	}
 }
 
 void ADefrostPuzzleBlockGrid::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -307,6 +321,8 @@ bool ADefrostPuzzleBlockGrid::MovePiece(const int PieceIndex, const EPuzzleDirec
 	auto pair = ADefrostPuzzleBlockGrid::GetPuzzleBlockLine(PieceIndex, Direction, blocks, isGoal);
 
 	PiecePositions[PieceIndex] = game::Field::Position(std::get<0>(pair), std::get<1>(pair));
+	PuzzlePieces[PieceIndex]->SetSliding(true);
+	Sequence = ESequence::MovePiece;
 
 	return (PieceIndex == 0) && isGoal;
 }

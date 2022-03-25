@@ -56,6 +56,7 @@ public:
 protected:
 	// Begin AActor interface
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	// End AActor interface
 
@@ -102,6 +103,12 @@ private:
 	UFUNCTION()
 	void OnFingerPressedBlock(ETouchIndex::Type FingerIndex, UPrimitiveComponent* TouchedComponent);
 
+	enum class ESequence : uint8
+	{
+		Nop,
+		MovePiece
+	};
+
 private:
 	std::unique_ptr<game::Field> Field;
 	std::vector<game::Field::Position> PiecePositions;
@@ -109,4 +116,5 @@ private:
 	TArray<class ADefrostPuzzleBlock*> PuzzleBlocks;
 	TArray<class ADefrostPuzzlePiece*> PuzzlePieces;
 	TArray<class IDefrostPuzzleBlockGridListener*> Listeners;
+	ESequence Sequence;
 };

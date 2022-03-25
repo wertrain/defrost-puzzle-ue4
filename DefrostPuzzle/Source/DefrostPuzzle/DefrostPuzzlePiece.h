@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "DefrostPuzzlePieceAnimator.h"
 #include "DefrostPuzzlePiece.generated.h"
 
 UCLASS()
-class DEFROSTPUZZLE_API ADefrostPuzzlePiece : public APawn
+class DEFROSTPUZZLE_API ADefrostPuzzlePiece : public APawn, public IDefrostPuzzlePieceAnimator
 {
 	GENERATED_BODY()
 
