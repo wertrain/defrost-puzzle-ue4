@@ -7,7 +7,7 @@
 #include "DefrostPuzzlePieceAnimator.generated.h"
 
 // This class does not need to be modified.
-UINTERFACE(Blueprintable)
+UINTERFACE(minimalapi, Blueprintable)
 class UDefrostPuzzlePieceAnimator : public UInterface
 {
 	GENERATED_BODY()

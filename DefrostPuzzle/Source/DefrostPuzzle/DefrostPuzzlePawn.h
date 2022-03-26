@@ -33,7 +33,17 @@ protected:
 	class ADefrostPuzzleBlock* CurrentBlockFocus;
 
 private:
+	enum class PuzzleBlockSelectMode : uint8
+	{
+		None,
+		Piece,
+		Direction
+	};
+
+private:
 	class ADefrostPuzzleBlockGrid* PuzzleBlockGrid;
+	int32 ActivePieceIndex;
 	int32 CurrentPieceIndex;
 	EPuzzleDirection CurrentPieceDirection;
+	PuzzleBlockSelectMode SelectionMode;
 };

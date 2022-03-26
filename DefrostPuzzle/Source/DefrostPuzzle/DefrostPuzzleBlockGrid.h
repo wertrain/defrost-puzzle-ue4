@@ -76,14 +76,20 @@ public:
 	int32 GetPuzzlePieceIndex(const class ADefrostPuzzlePiece* Piece) const;
 	// すべてのピースを取得
 	const std::vector<game::Field::Position>& GetPieces() const;
+	// 指定されたインデックスのピースから、指定されたブロックをハイライトを設定
+	void SetHighlightBlock(const int PieceIndex);
 	// 指定されたインデックスのピースから、指定された方向のブロックにハイライトを設定
 	void SetHighlightDirection(const int PieceIndex, const EPuzzleDirection Direction);
+	// 指定されたインデックスのピースを、指定された方向に向く
+	void SetPieceDirection(const int PieceIndex, const EPuzzleDirection Direction);
 	// 指定されたインデックスのピースを、指定された方向に移動
 	bool MovePiece(const int PieceIndex, const EPuzzleDirection Direction);
 	// すべてのピースを初期位置に戻す
 	void ResetPiece();
 	// 指定されたインデックスがゴールかを判定
 	bool IsGoal(const int Index) const;
+	// 指定されたブロックの上にピースが乗っているかを判定
+	int IsOnPiece(const class ADefrostPuzzleBlock* Block) const;
 	// リスナーを追加
 	void AddListener(IDefrostPuzzleBlockGridListener* Listener);
 
@@ -103,11 +109,46 @@ private:
 	UFUNCTION()
 	void OnFingerPressedBlock(ETouchIndex::Type FingerIndex, UPrimitiveComponent* TouchedComponent);
 
-	enum class ESequence : uint8
+	class PuzzleBlockGridSequenceBase
 	{
-		Nop,
-		MovePiece
+	public:
+		PuzzleBlockGridSequenceBase(ADefrostPuzzleBlockGrid* Owner) : Owner(Owner) {}
+		virtual ~PuzzleBlockGridSequenceBase() {}
+		virtual void Update(float DeltaSeconds) = 0;
+		virtual bool CanPlayerControl() const { return false; }
+	protected:
+		ADefrostPuzzleBlockGrid* Owner;
 	};
+
+	class SequenceNop : public PuzzleBlockGridSequenceBase
+	{
+	public:
+		SequenceNop(ADefrostPuzzleBlockGrid* Owner) : PuzzleBlockGridSequenceBase(Owner) {}
+		void Update(float DeltaSeconds) override {}
+		bool CanPlayerControl() const override { return true; }
+	};
+
+	class SequenceMovePiece : public PuzzleBlockGridSequenceBase
+	{
+	public:
+		SequenceMovePiece(ADefrostPuzzleBlockGrid* Owner);
+		void Update(float DeltaSeconds) override;
+		void SetTarget(class ADefrostPuzzlePiece* Piece, const game::Field::Position& Start, const game::Field::Position& Goal);
+		bool IsMoveEnd() const;
+
+	private:
+		class ADefrostPuzzlePiece* TargetPiece;
+		FVector StartPieceLocation;
+		FVector EndPieceLocation;
+		float CurrentTime;
+	};
+
+	template <class SEQUENCE>
+	SEQUENCE* NextSequence()
+	{
+		Sequence = std::make_unique<SEQUENCE>(this);
+		return static_cast<SEQUENCE*>(Sequence.get());
+	}
 
 private:
 	std::unique_ptr<game::Field> Field;
@@ -116,5 +157,5 @@ private:
 	TArray<class ADefrostPuzzleBlock*> PuzzleBlocks;
 	TArray<class ADefrostPuzzlePiece*> PuzzlePieces;
 	TArray<class IDefrostPuzzleBlockGridListener*> Listeners;
-	ESequence Sequence;
+	std::unique_ptr<PuzzleBlockGridSequenceBase> Sequence;
 };

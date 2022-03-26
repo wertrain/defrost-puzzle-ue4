@@ -11,6 +11,10 @@
 
 ADefrostPuzzleBlockGrid::ADefrostPuzzleBlockGrid()
 {
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = true;
+	PrimaryActorTick.bAllowTickOnDedicatedServer = true;
+
 	// Create dummy root scene component
 	DummyRoot = CreateDefaultSubobject<USceneComponent>(TEXT("Dummy0"));
 	RootComponent = DummyRoot;
@@ -27,7 +31,7 @@ ADefrostPuzzleBlockGrid::ADefrostPuzzleBlockGrid()
 	Height = 20;
 	BlockSpacing = 300.f;
 	Field = std::make_unique<game::Field>();
-	Sequence = ESequence::Nop;
+	Sequence = std::make_unique<SequenceNop>(this);
 }
 
 void ADefrostPuzzleBlockGrid::UpdatePuzzlePiecesMesh()
@@ -160,19 +164,15 @@ void ADefrostPuzzleBlockGrid::BeginPlay()
 
 void ADefrostPuzzleBlockGrid::Tick(float DeltaSeconds)
 {
-	switch (Sequence)
-	{
-	case ESequence::Nop:
-		break;
-	case ESequence::MovePiece:
-		break;
-	default:
-		break;
-	}
+	Super::Tick(DeltaSeconds);
+
+	Sequence->Update(DeltaSeconds);
 }
 
 void ADefrostPuzzleBlockGrid::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	Super::EndPlay(EndPlayReason);
+
 	for (auto& block : PuzzleBlocks)
 	{
 		block->RemoveFromRoot();
@@ -252,8 +252,31 @@ const std::vector<game::Field::Position>& ADefrostPuzzleBlockGrid::GetPieces() c
 	return PiecePositions;
 }
 
+void ADefrostPuzzleBlockGrid::SetHighlightBlock(const int PieceIndex)
+{
+	auto& piece = PiecePositions[PieceIndex];
+	
+	for (auto& block : PuzzleBlocks)
+	{
+		if (block->GetBlockType() != EBlockType::Rock)
+		{
+			block->Highlight(false);
+		}
+	}
+
+	if (auto* block = GetPuzzleBlock(piece.x, piece.y))
+	{
+		block->Highlight(true);
+	}	
+}
+
 void ADefrostPuzzleBlockGrid::SetHighlightDirection(const int PieceIndex, const EPuzzleDirection Direction)
 {
+	if (!Sequence->CanPlayerControl())
+	{
+		return;
+	}
+
 	if (PiecePositions.size() <= PieceIndex)
 	{
 		return;
@@ -314,15 +337,29 @@ void ADefrostPuzzleBlockGrid::SetHighlightDirection(const int PieceIndex, const 
 #endif
 }
 
+void ADefrostPuzzleBlockGrid::SetPieceDirection(const int PieceIndex, const EPuzzleDirection Direction)
+{
+	if (!Sequence->CanPlayerControl())
+	{
+		return;
+	}
+
+	float eulerZ[] = { -90.0f, 180.0f, 0.0f, 90.0f };
+	PuzzlePieces[PieceIndex]->SetActorRotation(FQuat::MakeFromEuler(FVector(0, 0, eulerZ[static_cast<int8>(Direction)])));
+}
+
 bool ADefrostPuzzleBlockGrid::MovePiece(const int PieceIndex, const EPuzzleDirection Direction)
 {
 	std::vector<ADefrostPuzzleBlock*> blocks;
 	bool isGoal = false;
 	auto pair = ADefrostPuzzleBlockGrid::GetPuzzleBlockLine(PieceIndex, Direction, blocks, isGoal);
 
-	PiecePositions[PieceIndex] = game::Field::Position(std::get<0>(pair), std::get<1>(pair));
-	PuzzlePieces[PieceIndex]->SetSliding(true);
-	Sequence = ESequence::MovePiece;
+	auto target = game::Field::Position(std::get<0>(pair), std::get<1>(pair));
+
+	auto* sequence = NextSequence<SequenceMovePiece>();
+	sequence->SetTarget(PuzzlePieces[PieceIndex], PiecePositions[PieceIndex], target);
+	
+	PiecePositions[PieceIndex] = target;
 
 	return (PieceIndex == 0) && isGoal;
 }
@@ -335,6 +372,21 @@ void ADefrostPuzzleBlockGrid::ResetPiece()
 bool ADefrostPuzzleBlockGrid::IsGoal(const int Index) const
 {
 	return Field->GetCell(Index % Width, Index / Width) == game::Field::CellType::Goal;
+}
+
+int ADefrostPuzzleBlockGrid::IsOnPiece(const class ADefrostPuzzleBlock* Block) const
+{
+	const auto& position = GetPuzzleBlockPosition(Block);
+
+	for (int32 index = 0, size = PiecePositions.size(); index < size; ++index)
+	{
+		if (PiecePositions[index].x == std::get<0>(position) && PiecePositions[index].y == std::get<1>(position))
+		{
+			return index;
+		}
+	}
+
+	return -1;
 }
 
 void ADefrostPuzzleBlockGrid::AddListener(IDefrostPuzzleBlockGridListener* Listener)
@@ -452,6 +504,67 @@ void ADefrostPuzzleBlockGrid::PieceMeshClicked(UPrimitiveComponent* ClickedCompo
 void ADefrostPuzzleBlockGrid::OnFingerPressedBlock(ETouchIndex::Type FingerIndex, UPrimitiveComponent* TouchedComponent)
 {
 
+}
+
+//-------------------------------------------------------------------------------------------------
+
+ADefrostPuzzleBlockGrid::SequenceMovePiece::SequenceMovePiece(ADefrostPuzzleBlockGrid* p)
+	: PuzzleBlockGridSequenceBase(p)
+	, TargetPiece()
+	, StartPieceLocation()
+	, EndPieceLocation()
+	, CurrentTime(.0f)
+{
+
+}
+
+static constexpr const float s_TargetTime = 1.0f;
+
+void ADefrostPuzzleBlockGrid::SequenceMovePiece::Update(float DeltaSeconds)
+{
+	if ((CurrentTime += DeltaSeconds) >= s_TargetTime)
+	{
+		CurrentTime = s_TargetTime;
+		Owner->NextSequence<SequenceNop>();
+		Owner->UpdatePuzzlePiecesMesh();
+		TargetPiece->SetSliding(false);
+	}
+
+	if (s_TargetTime > CurrentTime)
+	{
+		float rate = 1.0f - (s_TargetTime - CurrentTime) / s_TargetTime;
+		TargetPiece->SetActorLocation(
+			FMath::Lerp(StartPieceLocation, EndPieceLocation, rate)
+		);
+	}
+}
+
+void ADefrostPuzzleBlockGrid::SequenceMovePiece::SetTarget(ADefrostPuzzlePiece* Piece, const game::Field::Position& Start, const game::Field::Position& Goal)
+{
+	const float blockWidth = ADefrostPuzzleBlock::BlockSize, blockHeighg = ADefrostPuzzleBlock::BlockSize;
+	const int32 amountWidth = (Owner->Width * blockWidth) * .5f, amountHeight = (Owner->Height * blockHeighg) * .5f;
+
+	TargetPiece = Piece;
+
+	StartPieceLocation = FVector(
+		amountHeight - (Start.y * Owner->BlockSpacing),
+		-amountWidth + (Start.x * Owner->BlockSpacing),
+		ADefrostPuzzleBlock::BlockSize
+	) + Owner->GetActorLocation();
+	
+	EndPieceLocation = FVector(
+		amountHeight - (Goal.y * Owner->BlockSpacing),
+		-amountWidth + (Goal.x * Owner->BlockSpacing),
+		ADefrostPuzzleBlock::BlockSize
+	) + Owner->GetActorLocation();
+
+	CurrentTime = 0;
+	TargetPiece->SetSliding(true);
+}
+
+bool ADefrostPuzzleBlockGrid::SequenceMovePiece::IsMoveEnd() const
+{
+	return CurrentTime >= s_TargetTime;
 }
 
 #undef LOCTEXT_NAMESPACE

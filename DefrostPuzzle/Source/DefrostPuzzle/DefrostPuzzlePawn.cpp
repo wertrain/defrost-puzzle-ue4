@@ -2,6 +2,7 @@
 
 #include "DefrostPuzzlePawn.h"
 #include "DefrostPuzzleBlock.h"
+#include "DefrostPuzzlePiece.h"
 #include "DefrostPuzzleBlockGrid.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
@@ -15,8 +16,10 @@ ADefrostPuzzlePawn::ADefrostPuzzlePawn(const FObjectInitializer& ObjectInitializ
 {
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 	PuzzleBlockGrid = nullptr;
+	ActivePieceIndex = 0;
 	CurrentPieceIndex = 0;
 	CurrentPieceDirection = EPuzzleDirection::Up;
+	SelectionMode = PuzzleBlockSelectMode::None;
 }
 
 void ADefrostPuzzlePawn::Tick(float DeltaSeconds)
@@ -25,7 +28,20 @@ void ADefrostPuzzlePawn::Tick(float DeltaSeconds)
 
 	if (PuzzleBlockGrid)
 	{
-		PuzzleBlockGrid->SetHighlightDirection(CurrentPieceIndex, CurrentPieceDirection);
+		switch (SelectionMode)
+		{
+		case ADefrostPuzzlePawn::PuzzleBlockSelectMode::None:
+			break;
+		case ADefrostPuzzlePawn::PuzzleBlockSelectMode::Piece:
+			PuzzleBlockGrid->SetHighlightBlock(ActivePieceIndex);
+			break;
+		case ADefrostPuzzlePawn::PuzzleBlockSelectMode::Direction:
+			PuzzleBlockGrid->SetHighlightDirection(CurrentPieceIndex, CurrentPieceDirection);
+			PuzzleBlockGrid->SetPieceDirection(CurrentPieceIndex, CurrentPieceDirection);
+			break;
+		default:
+			break;
+		}
 	}
 	else
 	{
@@ -122,17 +138,37 @@ void ADefrostPuzzlePawn::TraceForBlock(const FVector& Start, const FVector& End,
 #else
 	if (HitResult.Actor.IsValid())
 	{
-		ADefrostPuzzleBlock* HitBlock = Cast<ADefrostPuzzleBlock>(HitResult.Actor.Get());
-		auto hitPosition = PuzzleBlockGrid->GetPuzzleBlockPosition(HitBlock);
-		const int hitX = std::get<0>(hitPosition), hitY = std::get<1>(hitPosition);
-		auto piece = PuzzleBlockGrid->GetPieces()[CurrentPieceIndex];
-		if (hitX == piece.x)
+		if (HitResult.Actor->GetClass() == ADefrostPuzzleBlock::StaticClass())
 		{
-			CurrentPieceDirection = (hitY < piece.y) ? EPuzzleDirection::Up : EPuzzleDirection::Down;
+			ADefrostPuzzleBlock* HitBlock = Cast<ADefrostPuzzleBlock>(HitResult.Actor.Get());
+			auto hitPosition = PuzzleBlockGrid->GetPuzzleBlockPosition(HitBlock);
+			const int hitX = std::get<0>(hitPosition), hitY = std::get<1>(hitPosition);
+			auto piece = PuzzleBlockGrid->GetPieces()[CurrentPieceIndex];
+
+			int onPieceIndex = PuzzleBlockGrid->IsOnPiece(HitBlock);
+			if (onPieceIndex >= 0)
+			{
+				SelectionMode = PuzzleBlockSelectMode::Piece;
+				ActivePieceIndex = onPieceIndex;
+			}
+			else
+			{
+				if (hitX == piece.x)
+				{
+					CurrentPieceDirection = (hitY < piece.y) ? EPuzzleDirection::Up : EPuzzleDirection::Down;
+				}
+				else if (hitY == piece.y)
+				{
+					CurrentPieceDirection = (hitX < piece.x) ? EPuzzleDirection::Left : EPuzzleDirection::Right;
+				}
+
+				SelectionMode = PuzzleBlockSelectMode::Direction;
+			}
 		}
-		else
+		else if (HitResult.Actor->GetClass() == ADefrostPuzzlePiece::StaticClass())
 		{
-			CurrentPieceDirection = (hitX < piece.x) ? EPuzzleDirection::Left : EPuzzleDirection::Right;
+			ADefrostPuzzlePiece* HitPiece = Cast<ADefrostPuzzlePiece>(HitResult.Actor.Get());
+			HitPiece->bBlockInput = true;
 		}
 	}
 #endif
@@ -140,21 +176,22 @@ void ADefrostPuzzlePawn::TraceForBlock(const FVector& Start, const FVector& End,
 
 void ADefrostPuzzlePawn::OnBlockMeshClicked(ADefrostPuzzleBlock* ClickedBlock, const std::pair<int32, int32>& position, const int index)
 {
-	const int hitX = std::get<0>(position), hitY = std::get<1>(position);
-	auto piece = PuzzleBlockGrid->GetPieces()[CurrentPieceIndex];
-
-	if (hitX == piece.x)
+	switch (SelectionMode)
 	{
-		CurrentPieceDirection = (hitY < piece.y) ? EPuzzleDirection::Up : EPuzzleDirection::Down;
-	}
-	else
-	{
-		CurrentPieceDirection = (hitX < piece.x) ? EPuzzleDirection::Left : EPuzzleDirection::Right;
+	case ADefrostPuzzlePawn::PuzzleBlockSelectMode::None:
+		break;
+	case ADefrostPuzzlePawn::PuzzleBlockSelectMode::Piece:
+		CurrentPieceIndex = ActivePieceIndex;
+		break;
+	case ADefrostPuzzlePawn::PuzzleBlockSelectMode::Direction:
+		PuzzleBlockGrid->MovePiece(CurrentPieceIndex, CurrentPieceDirection);
+		//PuzzleBlockGrid->UpdatePuzzlePiecesMesh();
+		PuzzleBlockGrid->AddScore();
+		break;
+	default:
+		break;
 	}
 
-	PuzzleBlockGrid->MovePiece(CurrentPieceIndex, CurrentPieceDirection);
-	PuzzleBlockGrid->UpdatePuzzlePiecesMesh();
-	PuzzleBlockGrid->AddScore();
 }
 
 void ADefrostPuzzlePawn::OnPieceMeshClicked(ADefrostPuzzlePiece* ClickedPiece, const std::pair<int32, int32>& position, const int index)
