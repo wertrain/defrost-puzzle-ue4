@@ -15,10 +15,16 @@ ADefrostPuzzlePiece::ADefrostPuzzlePiece()
 		ConstructorHelpers::FObjectFinderOptional<USkeletalMesh> PlaneMesh;
 		ConstructorHelpers::FObjectFinderOptional<UPhysicsAsset> PhysicsAsset;
 		ConstructorHelpers::FObjectFinderOptional<UAnimBlueprint> AnimBlueprint;
+		ConstructorHelpers::FObjectFinderOptional<UMaterial> BaseMaterial;
+		ConstructorHelpers::FObjectFinderOptional<UMaterial> SubMaterial;
+		ConstructorHelpers::FObjectFinderOptional<UMaterial> ChildMaterial;
 		FConstructorStatics()
 			: PlaneMesh(TEXT("/Game/Puzzle/SK_Penguin.SK_Penguin"))
 			, PhysicsAsset(TEXT("/Game/Puzzle/SK_Penguin_Physics.SK_Penguin_Physics"))
 			, AnimBlueprint(TEXT("/Game/Puzzle/ABP_Penguin.ABP_Penguin"))
+			, BaseMaterial(TEXT("/Game/Puzzle/Meshes/M_Penguin.M_Penguin"))
+			, SubMaterial(TEXT("/Game/Puzzle/Meshes/M_Penguin_Sub.M_Penguin_Sub"))
+			, ChildMaterial(TEXT("/Game/Puzzle/Meshes/M_Penguin_Child.M_Penguin_Child"))
 		{
 		}
 	};
@@ -36,6 +42,23 @@ ADefrostPuzzlePiece::ADefrostPuzzlePiece()
 	//PieceMesh->OnClicked.AddDynamic(this, &ADefrostPuzzleBlock::BlockClicked);
 	//PieceMesh->OnInputTouchBegin.AddDynamic(this, &ADefrostPuzzleBlock::OnFingerPressedBlock);
 	PieceMesh->SetAnimInstanceClass(ConstructorStatics.AnimBlueprint.Get()->GeneratedClass);
+
+	BaseMaterial = ConstructorStatics.BaseMaterial.Get();
+	SubMaterial = ConstructorStatics.SubMaterial.Get();
+	ChildMaterial = ConstructorStatics.ChildMaterial.Get();
+}
+
+void ADefrostPuzzlePiece::SetPieceType(const EPieceType PieceType)
+{
+	UMaterial* TypeToMaterial[static_cast<uint8>(EPieceType::Num)] =
+	{
+		BaseMaterial,
+		SubMaterial,
+		ChildMaterial
+	};
+
+	// Change material
+	PieceMesh->SetMaterial(0, TypeToMaterial[static_cast<uint8>(PieceType)]);
 }
 
 // Called when the game starts or when spawned

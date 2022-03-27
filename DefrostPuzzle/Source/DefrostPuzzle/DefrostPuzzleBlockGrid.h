@@ -49,10 +49,6 @@ public:
 	UPROPERTY(Category=Grid, EditAnywhere, BlueprintReadOnly)
 	float BlockSpacing;
 
-public:
-	UFUNCTION(BlueprintCallable, Category=Grid)
-	void UpdatePuzzlePiecesMesh();
-
 protected:
 	// Begin AActor interface
 	virtual void BeginPlay() override;
@@ -64,6 +60,7 @@ public:
 
 	/** Handle the block being clicked */
 	void AddScore();
+	void ResetScore();
 
 	// 指定された位置（x, y）のブロックを取得
 	class ADefrostPuzzleBlock* GetPuzzleBlock(const int x, const int y);
@@ -75,7 +72,7 @@ public:
 	// 指定されたピースのインデックスを取得
 	int32 GetPuzzlePieceIndex(const class ADefrostPuzzlePiece* Piece) const;
 	// すべてのピースを取得
-	const std::vector<game::Field::Position>& GetPieces() const;
+	const TArray<game::Field::Position>& GetPieces() const;
 	// 指定されたインデックスのピースから、指定されたブロックをハイライトを設定
 	void SetHighlightBlock(const int PieceIndex);
 	// 指定されたインデックスのピースから、指定された方向のブロックにハイライトを設定
@@ -85,7 +82,9 @@ public:
 	// 指定されたインデックスのピースを、指定された方向に移動
 	bool MovePiece(const int PieceIndex, const EPuzzleDirection Direction);
 	// すべてのピースを初期位置に戻す
-	void ResetPiece();
+	void ResetPieces();
+	// すべてのピースの位置を反映
+	void UpdatePuzzlePiecesMesh();
 	// 指定されたインデックスがゴールかを判定
 	bool IsGoal(const int Index) const;
 	// 指定されたブロックの上にピースが乗っているかを判定
@@ -152,10 +151,11 @@ private:
 
 private:
 	std::unique_ptr<game::Field> Field;
-	std::vector<game::Field::Position> PiecePositions;
-	std::vector<game::Field::Position> DefaultPiecePositions;
+	TArray<game::Field::Position> PiecePositions;
+	TArray<game::Field::Position> DefaultPiecePositions;
 	TArray<class ADefrostPuzzleBlock*> PuzzleBlocks;
 	TArray<class ADefrostPuzzlePiece*> PuzzlePieces;
+	class ADefrostPuzzlePiece* PuzzleGoalPiece;
 	TArray<class IDefrostPuzzleBlockGridListener*> Listeners;
 	std::unique_ptr<PuzzleBlockGridSequenceBase> Sequence;
 };

@@ -7,6 +7,15 @@
 #include "DefrostPuzzlePieceAnimator.h"
 #include "DefrostPuzzlePiece.generated.h"
 
+UENUM(BlueprintType)
+enum class EPieceType : uint8
+{
+	Main,
+	Sub,
+	Goal,
+	Num  UMETA(Hidden)
+};
+
 UCLASS()
 class DEFROSTPUZZLE_API ADefrostPuzzlePiece : public APawn, public IDefrostPuzzlePieceAnimator
 {
@@ -20,6 +29,22 @@ public:
 	UPROPERTY(Category=Piece, VisibleDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class USkeletalMeshComponent* PieceMesh;
 
+	/** Pointer to material */
+	UPROPERTY()
+	class UMaterial* BaseMaterial;
+
+	/** Pointer to material */
+	UPROPERTY()
+	class UMaterial* SubMaterial;
+
+	/** Pointer to material */
+	UPROPERTY()
+	class UMaterial* ChildMaterial;
+
+	/** Set the block type */
+	UFUNCTION()
+	void SetPieceType(const EPieceType PieceType);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -32,6 +57,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 public:
-	// Returns BlockMesh subobject
 	FORCEINLINE class USkeletalMeshComponent* GetPieceMesh() const { return PieceMesh; }
+
+
 };

@@ -25,9 +25,15 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="DefrostPuzzle|Animation")
 	bool IsSlideAnimation() const;
 	bool IsSlideAnimation_Implementation() const;
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "DefrostPuzzle|Animation")
+	bool IsChildIdle() const;
+	bool IsChildIdle_Implementation() const;
 
 	void SetSliding(const bool Sliding);
+	void SetChildIdle(const bool ChildIdle);
 
 private:
-	bool IsSliding { false };
+	bool IsSliding{ false };
+	bool IsChildIdling { false };
 };

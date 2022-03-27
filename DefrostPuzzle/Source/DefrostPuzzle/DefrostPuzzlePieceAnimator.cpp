@@ -7,10 +7,20 @@
 
 bool IDefrostPuzzlePieceAnimator::IsSlideAnimation_Implementation() const
 {
-    return IsSliding;
+	return IsSliding;
+}
+
+bool IDefrostPuzzlePieceAnimator::IsChildIdle_Implementation() const
+{
+	return IsChildIdling;
 }
 
 void IDefrostPuzzlePieceAnimator::SetSliding(const bool Sliding)
 {
-    IsSliding = Sliding;
+	IsSliding = Sliding;
+}
+
+void IDefrostPuzzlePieceAnimator::SetChildIdle(const bool ChildIdle)
+{
+	IsChildIdling = ChildIdle;
 }

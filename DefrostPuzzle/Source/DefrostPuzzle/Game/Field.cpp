@@ -154,6 +154,11 @@ Field::CellType Field::GetCell(const int x, const int y) const
     return m_Field[y][x];
 }
 
+Field::Position Field::GetGoalPosition() const
+{
+    return static_cast<Field::Position>(m_Islands[m_GoalIndex]);
+}
+
 void Field::CreateField(const int width, const int height)
 {
     DestroyField();

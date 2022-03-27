@@ -21,6 +21,9 @@ public:
 
 	virtual void CalcCamera(float DeltaTime, struct FMinimalViewInfo& OutResult) override;
 
+	UFUNCTION(BlueprintCallable, Category = Grid)
+	void ResetAllPieces();
+
 protected:
 	void OnResetVR();
 	void TriggerClick();
@@ -40,10 +43,17 @@ private:
 		Direction
 	};
 
+	struct PieceCommand
+	{
+		int32 PieceIndex;
+		EPuzzleDirection PieceDirection;
+	};
+
 private:
 	class ADefrostPuzzleBlockGrid* PuzzleBlockGrid;
 	int32 ActivePieceIndex;
 	int32 CurrentPieceIndex;
 	EPuzzleDirection CurrentPieceDirection;
 	PuzzleBlockSelectMode SelectionMode;
+	TArray<PieceCommand> PieceCommands;
 };

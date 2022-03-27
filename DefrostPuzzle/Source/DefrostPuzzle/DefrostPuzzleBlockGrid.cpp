@@ -23,13 +23,14 @@ ADefrostPuzzleBlockGrid::ADefrostPuzzleBlockGrid()
 	ScoreText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("ScoreText0"));
 	ScoreText->SetRelativeLocation(FVector(200.f,0.f,0.f));
 	ScoreText->SetRelativeRotation(FRotator(90.f,0.f,0.f));
-	ScoreText->SetText(FText::Format(LOCTEXT("ScoreFmt", "Score: {0}"), FText::AsNumber(0)));
+	ScoreText->SetText(FText::Format(LOCTEXT("ScoreFmt", "TURN: {0}"), FText::AsNumber(0)));
 	ScoreText->SetupAttachment(DummyRoot);
 
 	// Set defaults
 	Width = 20;
 	Height = 20;
 	BlockSpacing = 300.f;
+	PuzzleGoalPiece = nullptr;
 	Field = std::make_unique<game::Field>();
 	Sequence = std::make_unique<SequenceNop>(this);
 }
@@ -45,7 +46,7 @@ void ADefrostPuzzleBlockGrid::UpdatePuzzlePiecesMesh()
 		const float XOffset = piece.x * BlockSpacing;
 		const float YOffset = piece.y * BlockSpacing;
 
-		const FVector PieceLocation = FVector(amountHeight - YOffset, -amountWidth + XOffset, ADefrostPuzzleBlock::BlockSize) + GetActorLocation();
+		const FVector PieceLocation = FVector(amountHeight - YOffset, -amountWidth + XOffset, ADefrostPuzzleBlock::BlockSize * .5f) + GetActorLocation();
 
 		PuzzlePieces[index]->SetActorLocation(PieceLocation);
 	}
@@ -104,9 +105,15 @@ void ADefrostPuzzleBlockGrid::BeginPlay()
 		}
 	}
 
-	Field->PutPieces(PiecePositions, 4);
-	DefaultPiecePositions.reserve(PiecePositions.size());
-	copy(PiecePositions.begin(), PiecePositions.end(), DefaultPiecePositions.begin());
+	std::vector<game::Field::Position> pieces;
+	Field->PutPieces(pieces, 4);
+	PiecePositions.Reserve(pieces.size());
+	DefaultPiecePositions.Reserve(pieces.size());
+	for (auto& piece : pieces)
+	{
+		PiecePositions.Add(piece);
+		DefaultPiecePositions.Add(piece);
+	}
 
 	// Spawn Pieces
 	for (auto& piece : PiecePositions)
@@ -114,8 +121,9 @@ void ADefrostPuzzleBlockGrid::BeginPlay()
 		const float XOffset = piece.x * BlockSpacing;
 		const float YOffset = piece.y * BlockSpacing;
 
-		const FVector PieceLocation = FVector(amountHeight - YOffset, -amountWidth + XOffset, ADefrostPuzzleBlock::BlockSize) + GetActorLocation();
+		const FVector PieceLocation = FVector(amountHeight - YOffset, -amountWidth + XOffset, ADefrostPuzzleBlock::BlockSize * 0.5f) + GetActorLocation();
 		ADefrostPuzzlePiece* NewPiece = GetWorld()->SpawnActor<ADefrostPuzzlePiece>(PieceLocation, FRotator(0, 0, 0));
+		NewPiece->SetPieceType(EPieceType::Sub);
 		PuzzlePieces.Add(NewPiece);
 
 		if (auto* staticMesh = NewPiece->GetPieceMesh())
@@ -123,6 +131,14 @@ void ADefrostPuzzleBlockGrid::BeginPlay()
 			staticMesh->OnClicked.AddDynamic(this, &ADefrostPuzzleBlockGrid::PieceMeshClicked);
 		}
 	}
+	PuzzlePieces[0]->SetPieceType(EPieceType::Main);
+
+	auto goalPos = Field->GetGoalPosition();
+	PuzzleGoalPiece = GetWorld()->SpawnActor<ADefrostPuzzlePiece>(
+		FVector(amountHeight - (goalPos.y * BlockSpacing), -amountWidth + (goalPos.x * BlockSpacing), ADefrostPuzzleBlock::BlockSize * 0.5f) + GetActorLocation(), 
+		FRotator(0, 90, 0));
+	PuzzleGoalPiece->SetPieceType(EPieceType::Goal);
+	PuzzleGoalPiece->SetChildIdle(true);
 
 	Field->Dump([&](const game::Field::CellType** cells, const int width, const int height)
 	{
@@ -192,7 +208,15 @@ void ADefrostPuzzleBlockGrid::AddScore()
 	Score++;
 
 	// Update text
-	ScoreText->SetText(FText::Format(LOCTEXT("ScoreFmt", "Score: {0}"), FText::AsNumber(Score)));
+	ScoreText->SetText(FText::Format(LOCTEXT("ScoreFmt", "TURN: {0}"), FText::AsNumber(Score)));
+}
+
+void ADefrostPuzzleBlockGrid::ResetScore()
+{
+	Score = 0;
+
+	// Update text
+	ScoreText->SetText(FText::Format(LOCTEXT("ScoreFmt", "TURN: {0}"), FText::AsNumber(Score)));
 }
 
 ADefrostPuzzleBlock* ADefrostPuzzleBlockGrid::GetPuzzleBlock(const int x, const int y)
@@ -247,7 +271,7 @@ int ADefrostPuzzleBlockGrid::GetPuzzlePieceIndex(const ADefrostPuzzlePiece* Piec
 	return -1;
 }
 
-const std::vector<game::Field::Position>& ADefrostPuzzleBlockGrid::GetPieces() const
+const TArray<game::Field::Position>& ADefrostPuzzleBlockGrid::GetPieces() const
 {
 	return PiecePositions;
 }
@@ -277,7 +301,7 @@ void ADefrostPuzzleBlockGrid::SetHighlightDirection(const int PieceIndex, const 
 		return;
 	}
 
-	if (PiecePositions.size() <= PieceIndex)
+	if (PiecePositions.Num() <= PieceIndex)
 	{
 		return;
 	}
@@ -364,9 +388,12 @@ bool ADefrostPuzzleBlockGrid::MovePiece(const int PieceIndex, const EPuzzleDirec
 	return (PieceIndex == 0) && isGoal;
 }
 
-void ADefrostPuzzleBlockGrid::ResetPiece()
+void ADefrostPuzzleBlockGrid::ResetPieces()
 {
-	copy(DefaultPiecePositions.begin(), DefaultPiecePositions.end(), PiecePositions.begin());
+	for (int index = 0; index < DefaultPiecePositions.Num(); ++index)
+	{
+		PiecePositions[index] = DefaultPiecePositions[index];
+	}
 }
 
 bool ADefrostPuzzleBlockGrid::IsGoal(const int Index) const
@@ -378,7 +405,7 @@ int ADefrostPuzzleBlockGrid::IsOnPiece(const class ADefrostPuzzleBlock* Block) c
 {
 	const auto& position = GetPuzzleBlockPosition(Block);
 
-	for (int32 index = 0, size = PiecePositions.size(); index < size; ++index)
+	for (int32 index = 0, size = PiecePositions.Num(); index < size; ++index)
 	{
 		if (PiecePositions[index].x == std::get<0>(position) && PiecePositions[index].y == std::get<1>(position))
 		{
@@ -400,7 +427,7 @@ std::pair<int32, int32> ADefrostPuzzleBlockGrid::GetPuzzleBlockLine(const int Pi
 
 	auto checkPieces = [&](const int px, const int py)
 	{
-		for (int32 index = 0; index < PiecePositions.size(); ++index)
+		for (int32 index = 0; index < PiecePositions.Num(); ++index)
 		{
 			if (PieceIndex != index)
 			{
