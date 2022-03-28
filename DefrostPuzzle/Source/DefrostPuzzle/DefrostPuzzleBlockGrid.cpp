@@ -259,6 +259,11 @@ std::pair<int32, int32> ADefrostPuzzleBlockGrid::GetPuzzleBlockPosition(const AD
 	return std::pair<int32, int32>(-1, -1);
 }
 
+std::pair<int32, int32> ADefrostPuzzleBlockGrid::GetPuzzlePiecePositionByIndex(const int PieceIndex) const
+{
+	return std::pair<int32, int32>(PiecePositions[PieceIndex].x, PiecePositions[PieceIndex].y);
+}
+
 int ADefrostPuzzleBlockGrid::GetPuzzlePieceIndex(const ADefrostPuzzlePiece* Piece) const
 {
 	for (int32 index = 0; index < PuzzlePieces.Num(); ++index)

@@ -69,6 +69,8 @@ public:
 	int32 GetPuzzleBlockIndex(const class ADefrostPuzzleBlock* Block) const;
 	// 指定されたブロックの位置（x, y）を取得
 	std::pair<int32, int32> GetPuzzleBlockPosition(const class ADefrostPuzzleBlock* Block) const;
+	// 指定されたピースの位置（x, y）を取得
+	std::pair<int32, int32> GetPuzzlePiecePositionByIndex(const int PieceIndex) const;
 	// 指定されたピースのインデックスを取得
 	int32 GetPuzzlePieceIndex(const class ADefrostPuzzlePiece* Piece) const;
 	// すべてのピースを取得

@@ -47,6 +47,8 @@ private:
 	{
 		int32 PieceIndex;
 		EPuzzleDirection PieceDirection;
+		std::pair<int32, int32> BeforePosition;
+		std::pair<int32, int32> AfterPosition;
 	};
 
 private:

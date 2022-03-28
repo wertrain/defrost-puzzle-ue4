@@ -96,6 +96,7 @@ void ADefrostPuzzlePawn::ResetAllPieces()
 	PuzzleBlockGrid->ResetPieces();
 	PuzzleBlockGrid->UpdatePuzzlePiecesMesh();
 	PuzzleBlockGrid->ResetScore();
+	PieceCommands.Empty();
 }
 
 void ADefrostPuzzlePawn::OnResetVR()
@@ -191,10 +192,18 @@ void ADefrostPuzzlePawn::OnBlockMeshClicked(ADefrostPuzzleBlock* ClickedBlock, c
 		CurrentPieceIndex = ActivePieceIndex;
 		break;
 	case ADefrostPuzzlePawn::PuzzleBlockSelectMode::Direction:
+	{
+		PieceCommand command;
+		command.PieceIndex = CurrentPieceIndex;
+		command.PieceDirection = CurrentPieceDirection;
+		command.BeforePosition = PuzzleBlockGrid->GetPuzzlePiecePositionByIndex(CurrentPieceIndex);
 		PuzzleBlockGrid->MovePiece(CurrentPieceIndex, CurrentPieceDirection);
+		command.AfterPosition = PuzzleBlockGrid->GetPuzzlePiecePositionByIndex(CurrentPieceIndex);
+		PieceCommands.Add(command);
 		//PuzzleBlockGrid->UpdatePuzzlePiecesMesh();
 		PuzzleBlockGrid->AddScore();
 		break;
+	}
 	default:
 		break;
 	}
