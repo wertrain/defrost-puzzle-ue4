@@ -21,8 +21,14 @@ public:
 
 	virtual void CalcCamera(float DeltaTime, struct FMinimalViewInfo& OutResult) override;
 
-	UFUNCTION(BlueprintCallable, Category = Grid)
+	UFUNCTION(BlueprintCallable, Category=Grid)
 	void ResetAllPieces();
+
+	UFUNCTION(BlueprintCallable, Category=Grid)
+	void UndoPiece();
+
+	UFUNCTION(BlueprintCallable, Category=Grid)
+	void RedoPiece();
 
 protected:
 	void OnResetVR();
@@ -46,6 +52,8 @@ private:
 	struct PieceCommand
 	{
 		int32 PieceIndex;
+		int32 BeforeScore;
+		int32 AfterScore;
 		EPuzzleDirection PieceDirection;
 		std::pair<int32, int32> BeforePosition;
 		std::pair<int32, int32> AfterPosition;
@@ -58,4 +66,5 @@ private:
 	EPuzzleDirection CurrentPieceDirection;
 	PuzzleBlockSelectMode SelectionMode;
 	TArray<PieceCommand> PieceCommands;
+	TArray<PieceCommand> UndoRedoCommands;
 };

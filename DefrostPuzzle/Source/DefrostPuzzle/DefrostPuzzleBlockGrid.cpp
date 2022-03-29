@@ -205,18 +205,25 @@ void ADefrostPuzzleBlockGrid::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ADefrostPuzzleBlockGrid::AddScore()
 {
 	// Increment score
-	Score++;
+	SetScore(Score+1);
+}
+
+void ADefrostPuzzleBlockGrid::ResetScore()
+{
+	SetScore(0);
+}
+
+void ADefrostPuzzleBlockGrid::SetScore(const int NewScore)
+{
+	Score = NewScore;
 
 	// Update text
 	ScoreText->SetText(FText::Format(LOCTEXT("ScoreFmt", "TURN: {0}"), FText::AsNumber(Score)));
 }
 
-void ADefrostPuzzleBlockGrid::ResetScore()
+int32 ADefrostPuzzleBlockGrid::GetScore() const
 {
-	Score = 0;
-
-	// Update text
-	ScoreText->SetText(FText::Format(LOCTEXT("ScoreFmt", "TURN: {0}"), FText::AsNumber(Score)));
+	return Score;
 }
 
 ADefrostPuzzleBlock* ADefrostPuzzleBlockGrid::GetPuzzleBlock(const int x, const int y)
@@ -375,6 +382,11 @@ void ADefrostPuzzleBlockGrid::SetPieceDirection(const int PieceIndex, const EPuz
 
 	float eulerZ[] = { -90.0f, 180.0f, 0.0f, 90.0f };
 	PuzzlePieces[PieceIndex]->SetActorRotation(FQuat::MakeFromEuler(FVector(0, 0, eulerZ[static_cast<int8>(Direction)])));
+}
+
+void ADefrostPuzzleBlockGrid::SetPiecePosition(const int PieceIndex, const std::pair<int32, int32> Position)
+{
+	PiecePositions[PieceIndex] = game::Field::Position(std::get<0>(Position), std::get<1>(Position));
 }
 
 bool ADefrostPuzzleBlockGrid::MovePiece(const int PieceIndex, const EPuzzleDirection Direction)

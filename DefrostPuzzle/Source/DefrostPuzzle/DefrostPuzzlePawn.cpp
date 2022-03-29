@@ -99,6 +99,32 @@ void ADefrostPuzzlePawn::ResetAllPieces()
 	PieceCommands.Empty();
 }
 
+void ADefrostPuzzlePawn::UndoPiece()
+{
+	if (PieceCommands.Num() > 0)
+	{
+		auto command = PieceCommands.Pop();
+		UndoRedoCommands.Push(command);
+
+		PuzzleBlockGrid->SetPiecePosition(command.PieceIndex, command.BeforePosition);
+		PuzzleBlockGrid->UpdatePuzzlePiecesMesh();
+		PuzzleBlockGrid->SetScore(command.BeforeScore);
+	}
+}
+
+void ADefrostPuzzlePawn::RedoPiece()
+{
+	if (UndoRedoCommands.Num() > 0)
+	{
+		auto command = UndoRedoCommands.Pop();
+		PieceCommands.Push(command);
+
+		PuzzleBlockGrid->SetPiecePosition(command.PieceIndex, command.AfterPosition);
+		PuzzleBlockGrid->UpdatePuzzlePiecesMesh();
+		PuzzleBlockGrid->SetScore(command.AfterScore);
+	}
+}
+
 void ADefrostPuzzlePawn::OnResetVR()
 {
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
@@ -197,11 +223,14 @@ void ADefrostPuzzlePawn::OnBlockMeshClicked(ADefrostPuzzleBlock* ClickedBlock, c
 		command.PieceIndex = CurrentPieceIndex;
 		command.PieceDirection = CurrentPieceDirection;
 		command.BeforePosition = PuzzleBlockGrid->GetPuzzlePiecePositionByIndex(CurrentPieceIndex);
+		command.BeforeScore = PuzzleBlockGrid->GetScore();
 		PuzzleBlockGrid->MovePiece(CurrentPieceIndex, CurrentPieceDirection);
+		command.AfterScore = PuzzleBlockGrid->GetScore();
 		command.AfterPosition = PuzzleBlockGrid->GetPuzzlePiecePositionByIndex(CurrentPieceIndex);
-		PieceCommands.Add(command);
+		PieceCommands.Push(command);
 		//PuzzleBlockGrid->UpdatePuzzlePiecesMesh();
 		PuzzleBlockGrid->AddScore();
+		UndoRedoCommands.Empty();
 		break;
 	}
 	default:

@@ -61,6 +61,8 @@ public:
 	/** Handle the block being clicked */
 	void AddScore();
 	void ResetScore();
+	void SetScore(const int NewScore);
+	int32 GetScore() const;
 
 	// 指定された位置（x, y）のブロックを取得
 	class ADefrostPuzzleBlock* GetPuzzleBlock(const int x, const int y);
@@ -81,6 +83,8 @@ public:
 	void SetHighlightDirection(const int PieceIndex, const EPuzzleDirection Direction);
 	// 指定されたインデックスのピースを、指定された方向に向く
 	void SetPieceDirection(const int PieceIndex, const EPuzzleDirection Direction);
+	// 指定されたピースの位置（x, y）を設定
+	void SetPiecePosition(const int PieceIndex, const std::pair<int32, int32> Position);
 	// 指定されたインデックスのピースを、指定された方向に移動
 	bool MovePiece(const int PieceIndex, const EPuzzleDirection Direction);
 	// すべてのピースを初期位置に戻す
