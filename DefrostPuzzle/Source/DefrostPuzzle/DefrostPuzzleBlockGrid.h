@@ -142,10 +142,23 @@ private:
 		bool IsMoveEnd() const;
 
 	private:
+		enum class InSequenceId : uint8
+		{
+			InAnim,
+			Sliding,
+			OutAnim
+		};
+		void Update_InAnim(float DeltaSeconds);
+		void Update_Sliding(float DeltaSeconds);
+		void Update_OutAnim(float DeltaSeconds);
+
+	private:
 		class ADefrostPuzzlePiece* TargetPiece;
 		FVector StartPieceLocation;
 		FVector EndPieceLocation;
 		float CurrentTime;
+		InSequenceId InSequence;
+		float AnimTime;
 	};
 
 	template <class SEQUENCE>

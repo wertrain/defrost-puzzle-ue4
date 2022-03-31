@@ -14,7 +14,8 @@ ADefrostPuzzleBlock::ADefrostPuzzleBlock()
 	// Structure to hold one-time initialization
 	struct FConstructorStatics
 	{
-		ConstructorHelpers::FObjectFinderOptional<UStaticMesh> PlaneMesh;
+		ConstructorHelpers::FObjectFinderOptional<UStaticMesh> BlockMesh;
+		ConstructorHelpers::FObjectFinderOptional<UStaticMesh> RockMesh;
 		ConstructorHelpers::FObjectFinderOptional<UMaterial> BaseMaterial;
 		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> RockMaterial;
 		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> FrozenMaterial;
@@ -23,7 +24,8 @@ ADefrostPuzzleBlock::ADefrostPuzzleBlock()
 		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> BlueMaterial;
 		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> OrangeMaterial;
 		FConstructorStatics()
-			: PlaneMesh(TEXT("/Game/Puzzle/Meshes/SM_PuzzleCube.SM_PuzzleCube"))
+			: BlockMesh(TEXT("/Game/Puzzle/Meshes/SM_PuzzleCube.SM_PuzzleCube"))
+			, RockMesh(TEXT("/Game/Puzzle/Rock/SM_Rock_A.SM_Rock_A"))
 			, BaseMaterial(TEXT("/Game/Puzzle/Meshes/M_CubeBase.M_CubeBase"))
 			, RockMaterial(TEXT("/Game/Puzzle/Meshes/MI_CubeRock.MI_CubeRock"))
 			, FrozenMaterial(TEXT("/Game/Puzzle/Meshes/MI_CubeFrozen.MI_CubeFrozen"))
@@ -45,10 +47,10 @@ ADefrostPuzzleBlock::ADefrostPuzzleBlock()
 
 	// Create static mesh component
 	BlockMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BlockMesh0"));
-	BlockMesh->SetStaticMesh(ConstructorStatics.PlaneMesh.Get());
+	BlockMesh->SetStaticMesh(ConstructorStatics.BlockMesh.Get());
 	BlockMesh->SetRelativeScale3D(FVector(1.f * scale,1.f * scale, 1.f * scale));
 	BlockMesh->SetRelativeLocation(FVector(0.f,0.f,0.f));
-	BlockMesh->SetMaterial(0, ConstructorStatics.BlueMaterial.Get());
+	//BlockMesh->SetMaterial(0, ConstructorStatics.BlueMaterial.Get());
 	BlockMesh->SetupAttachment(DummyRoot);
 	//BlockMesh->OnClicked.AddDynamic(this, &ADefrostPuzzleBlock::BlockClicked);
 	//BlockMesh->OnInputTouchBegin.AddDynamic(this, &ADefrostPuzzleBlock::OnFingerPressedBlock);
@@ -61,6 +63,7 @@ ADefrostPuzzleBlock::ADefrostPuzzleBlock()
 	FrozenMaterial = ConstructorStatics.FrozenMaterial.Get();
 	HardFrozenMaterial = ConstructorStatics.HardFrozenMaterial.Get();
 	MeltedMaterial = ConstructorStatics.MeltedMaterial.Get();
+	RockMesh = ConstructorStatics.RockMesh.Get();
 }
 
 void ADefrostPuzzleBlock::BlockClicked(UPrimitiveComponent* ClickedComp, FKey ButtonClicked)
@@ -88,6 +91,13 @@ void ADefrostPuzzleBlock::SetBlockType(const EBlockType Type)
 
 	// Change material
 	BlockMesh->SetMaterial(0, TypeToMaterial[static_cast<uint8>(Type)]);
+}
+
+void ADefrostPuzzleBlock::ChangeRockMesh()
+{
+	BlockMesh->SetStaticMesh(RockMesh);
+	const float scale = 0.01f;
+	BlockMesh->SetRelativeScale3D(FVector(1.f * scale, 1.f * scale, 1.f * scale));
 }
 
 EBlockType ADefrostPuzzleBlock::GetBlockType() const

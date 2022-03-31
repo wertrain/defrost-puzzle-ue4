@@ -66,6 +66,10 @@ public:
 	UPROPERTY()
 	class UMaterialInstance* OrangeMaterial;
 
+	/** Pointer to material */
+	UPROPERTY()
+	class UStaticMesh* RockMesh;
+
 	/** Grid that owns us */
 	UPROPERTY()
 	class ADefrostPuzzleBlockGrid* OwningGrid;
@@ -81,6 +85,9 @@ public:
 	/** Set the block type */
 	UFUNCTION()
 	void SetBlockType(const EBlockType BlockType);
+
+	UFUNCTION()
+	void ChangeRockMesh();
 
 	/** Get the block type */
 	UFUNCTION()

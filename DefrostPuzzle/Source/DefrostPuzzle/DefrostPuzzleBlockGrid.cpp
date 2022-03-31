@@ -85,7 +85,7 @@ void ADefrostPuzzleBlockGrid::BeginPlay()
 				switch (Field->GetCell(x, y))
 				{
 				case game::Field::CellType::Block:
-					NewBlock->SetBlockType(EBlockType::Rock);
+					NewBlock->ChangeRockMesh();
 					break;
 				case game::Field::CellType::Frozen:
 					NewBlock->SetBlockType(EBlockType::Frozen);
@@ -558,19 +558,72 @@ ADefrostPuzzleBlockGrid::SequenceMovePiece::SequenceMovePiece(ADefrostPuzzleBloc
 	, StartPieceLocation()
 	, EndPieceLocation()
 	, CurrentTime(.0f)
+	, InSequence(ADefrostPuzzleBlockGrid::SequenceMovePiece::InSequenceId::InAnim)
+	, AnimTime(.0f)
 {
 
 }
 
+void ADefrostPuzzleBlockGrid::SequenceMovePiece::Update(float DeltaSeconds)
+{
+	switch (InSequence)
+	{
+	case ADefrostPuzzleBlockGrid::SequenceMovePiece::InSequenceId::InAnim:
+		Update_InAnim(DeltaSeconds);
+		break;
+	case ADefrostPuzzleBlockGrid::SequenceMovePiece::InSequenceId::Sliding:
+		Update_Sliding(DeltaSeconds);
+		break;
+	case ADefrostPuzzleBlockGrid::SequenceMovePiece::InSequenceId::OutAnim:
+		Update_OutAnim(DeltaSeconds);
+		break;
+	default:
+		break;
+	}
+}
+
+void ADefrostPuzzleBlockGrid::SequenceMovePiece::SetTarget(ADefrostPuzzlePiece* Piece, const game::Field::Position& Start, const game::Field::Position& Goal)
+{
+	const float blockWidth = ADefrostPuzzleBlock::BlockSize, blockHeighg = ADefrostPuzzleBlock::BlockSize;
+	const int32 amountWidth = (Owner->Width * blockWidth) * .5f, amountHeight = (Owner->Height * blockHeighg) * .5f;
+
+	TargetPiece = Piece;
+
+	StartPieceLocation = Piece->GetActorLocation();
+	
+	EndPieceLocation = FVector(
+		amountHeight - (Goal.y * Owner->BlockSpacing),
+		-amountWidth + (Goal.x * Owner->BlockSpacing),
+		ADefrostPuzzleBlock::BlockSize * .5f
+	) + Owner->GetActorLocation();
+
+	CurrentTime = 0;
+	TargetPiece->SetSliding(true);
+}
+
 static constexpr const float s_TargetTime = 1.0f;
 
-void ADefrostPuzzleBlockGrid::SequenceMovePiece::Update(float DeltaSeconds)
+bool ADefrostPuzzleBlockGrid::SequenceMovePiece::IsMoveEnd() const
+{
+	return CurrentTime >= s_TargetTime;
+}
+
+void ADefrostPuzzleBlockGrid::SequenceMovePiece::Update_InAnim(float DeltaSeconds)
+{
+	if ((AnimTime += DeltaSeconds) >= 0.8f)
+	{
+		InSequence = InSequenceId::Sliding;
+		AnimTime = 0;
+	}
+}
+
+void ADefrostPuzzleBlockGrid::SequenceMovePiece::Update_Sliding(float DeltaSeconds)
 {
 	if ((CurrentTime += DeltaSeconds) >= s_TargetTime)
 	{
 		CurrentTime = s_TargetTime;
-		Owner->NextSequence<SequenceNop>();
-		Owner->UpdatePuzzlePiecesMesh();
+
+		InSequence = InSequenceId::OutAnim;
 		TargetPiece->SetSliding(false);
 	}
 
@@ -583,32 +636,14 @@ void ADefrostPuzzleBlockGrid::SequenceMovePiece::Update(float DeltaSeconds)
 	}
 }
 
-void ADefrostPuzzleBlockGrid::SequenceMovePiece::SetTarget(ADefrostPuzzlePiece* Piece, const game::Field::Position& Start, const game::Field::Position& Goal)
+void ADefrostPuzzleBlockGrid::SequenceMovePiece::Update_OutAnim(float DeltaSeconds)
 {
-	const float blockWidth = ADefrostPuzzleBlock::BlockSize, blockHeighg = ADefrostPuzzleBlock::BlockSize;
-	const int32 amountWidth = (Owner->Width * blockWidth) * .5f, amountHeight = (Owner->Height * blockHeighg) * .5f;
-
-	TargetPiece = Piece;
-
-	StartPieceLocation = FVector(
-		amountHeight - (Start.y * Owner->BlockSpacing),
-		-amountWidth + (Start.x * Owner->BlockSpacing),
-		ADefrostPuzzleBlock::BlockSize
-	) + Owner->GetActorLocation();
-	
-	EndPieceLocation = FVector(
-		amountHeight - (Goal.y * Owner->BlockSpacing),
-		-amountWidth + (Goal.x * Owner->BlockSpacing),
-		ADefrostPuzzleBlock::BlockSize
-	) + Owner->GetActorLocation();
-
-	CurrentTime = 0;
-	TargetPiece->SetSliding(true);
-}
-
-bool ADefrostPuzzleBlockGrid::SequenceMovePiece::IsMoveEnd() const
-{
-	return CurrentTime >= s_TargetTime;
+	if ((AnimTime += DeltaSeconds) >= 0.8f)
+	{
+		Owner->NextSequence<SequenceNop>();
+		Owner->UpdatePuzzlePiecesMesh();
+		AnimTime = 0;
+	}
 }
 
 #undef LOCTEXT_NAMESPACE
