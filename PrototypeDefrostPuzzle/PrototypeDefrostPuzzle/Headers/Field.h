@@ -3,6 +3,10 @@
 #include <cinttypes>
 #include <vector>
 #include <functional>
+#include <string>
+
+namespace game
+{
 
 class Field
 {
@@ -48,9 +52,13 @@ public:
     ~Field();
 
     bool Create(const CreateParameter& param);
+    bool CreateFromString(const char* serialized);
     void Destroy();
     void Dump(std::function<void(const CellType**, int, int)> dumper);
     void PutPieces(std::vector<Position>& pieces, int putNum);
+    CellType GetCell(int x, int y) const;
+    Position GetGoalPosition() const;
+    void Serialize(std::string& dist);
 
 private:
     void CreateField(int width, int height);
@@ -59,27 +67,10 @@ private:
     void FillField(const CellType cellType);
 
 private:
-    struct Island : public Position
-    {
-        enum class Corner : uint8_t
-        {
-            LeftUp,
-            RightUp,
-            LeftBottom,
-            RightBottom,
-        };
-        Corner corner;
-
-        Island(int x, int y, Corner corner)
-            : Position(x, y)
-            , corner(corner)
-        {}
-    };
-
-private:
     CellType** m_Field;
     int32_t m_Width;
     int32_t m_Height;
-    std::vector<Island> m_Islands;
-    int32_t m_GoalIndex;
+    Position m_Goal;
 };
+
+} // namespace game

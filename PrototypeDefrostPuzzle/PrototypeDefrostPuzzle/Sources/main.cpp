@@ -5,7 +5,7 @@
 namespace
 {
 
-void Dump(const Field::CellType** cells, const int width, const int height)
+void Dump(const game::Field::CellType** cells, const int width, const int height)
 {
     for (int y = 0; y < height; ++y)
     {
@@ -14,16 +14,16 @@ void Dump(const Field::CellType** cells, const int width, const int height)
             const char* cell = nullptr;
             switch (cells[y][x])
             {
-            case Field::CellType::Frozen:
+            case game::Field::CellType::Frozen:
                 cell = " ";
                 break;
-            case Field::CellType::Block:
+            case game::Field::CellType::Block:
                 cell = "¡";
                 break;
-            case Field::CellType::Piece:
+            case game::Field::CellType::Piece:
                 cell = "›";
                 break;
-            case Field::CellType::Goal:
+            case game::Field::CellType::Goal:
                 cell = "";
                 break;
             default:
@@ -40,12 +40,12 @@ void Dump(const Field::CellType** cells, const int width, const int height)
 
 int main()
 {
-    auto field = std::make_unique<Field>();
+    auto field = std::make_unique<game::Field>();
 
-    Field::CreateParameter param;
+    game::Field::CreateParameter param;
     field->Create(param);
-    
-    std::vector<Field::Position> positions;
+
+    std::vector<game::Field::Position> positions;
     field->PutPieces(positions, 4);
 
     std::vector<Piece> pieces;
@@ -54,6 +54,14 @@ int main()
         pieces.push_back(Piece(it.x, it.y));
     }
 
+    field->Dump(Dump);
+
+    std::string serialized;
+    field->Serialize(serialized);
+
+    std::cout << serialized << std::endl;
+
+    field->CreateFromString(serialized.c_str());
     field->Dump(Dump);
 
     return 0;
