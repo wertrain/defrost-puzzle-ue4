@@ -23,11 +23,13 @@
     <ClCompile Include="Sources\main.cpp" />
     <ClCompile Include="Sources\Piece.cpp" />
     <ClCompile Include="Sources\RouteFinder.cpp" />
+    <ClCompile Include="Sources\Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Headers\Field.h" />
     <ClInclude Include="Headers\Piece.h" />
     <ClInclude Include="Headers\RouteFinder.h" />
+    <ClInclude Include="Headers\Utility.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

@@ -41,6 +41,10 @@ public:
         int x;
         int y;
 
+        Position()
+            : x(0)
+            , y(0)
+        {}
         Position(int x, int y)
             : x(x)
             , y(y)
@@ -71,6 +75,7 @@ private:
     int32_t m_Width;
     int32_t m_Height;
     Position m_Goal;
+    std::vector<Position> m_Pieces;
 };
 
 } // namespace game

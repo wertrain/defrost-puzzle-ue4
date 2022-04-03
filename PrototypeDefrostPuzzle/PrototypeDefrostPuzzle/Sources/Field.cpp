@@ -1,5 +1,6 @@
 #include "Field.h"
 
+#include "Utility.h"
 #include <random>
 #include <iterator>
 #include <numeric>
@@ -14,6 +15,7 @@ Field::Field()
     , m_Width(0)
     , m_Height(0)
     , m_Goal(0, 0)
+    , m_Pieces()
 {
 
 }
@@ -102,23 +104,52 @@ bool Field::CreateFromString(const char* serialized)
 
     CreateField(atoi(v[0].c_str()), atoi(v[1].c_str()));
 
-    if (v[2].length() == (m_Width * m_Height));
+    std::string decoded;
+    game::Utility::DecodeRunLength(v[2], decoded);
 
-    const char* p = v[2].c_str();
+    if (decoded.length() != (m_Width * m_Height))
+    {
+        return false;
+    }
+
+    game::Field::Position pieces[32];
+    int pieceCount = 0;
+
+    const char* p = decoded.c_str();
     for (int y = 0; y < m_Height; ++y)
     {
         for (int x = 0; x < m_Width; ++x)
         {
             int index = m_Width * y + x;
-            int cell = p[index] - '0';
 
-            if (static_cast<CellType>(cell) == CellType::Goal)
+            if (p[index] >= 'a' && p[index] <= 'z')
             {
-                m_Goal = Position(x, y);
-            }
+                int pieceIndex = p[index] - 'a';
+                pieces[pieceIndex].x = x;
+                pieces[pieceIndex].y = y;
+                ++pieceCount;
 
-            m_Field[y][x] = static_cast<CellType>(cell);
+                m_Field[y][x] = CellType::Piece;
+            }
+            else
+            {
+                CellType cell = static_cast<CellType>(p[index] - '0');
+
+                if (cell == CellType::Goal)
+                {
+                    m_Goal = Position(x, y);
+                }
+
+                m_Field[y][x] = cell;
+            }
         }
+    }
+
+    m_Pieces.clear();
+    m_Pieces.resize(pieceCount);
+    for (int count = 0; count < pieceCount; ++count)
+    {
+        m_Pieces[count] = pieces[count];
     }
 
     return true;
@@ -186,6 +217,9 @@ void Field::PutPieces(std::vector<Position>& pieces, const int putNum)
             --count;
         }
     }
+
+    m_Pieces.clear();
+    copy(pieces.begin(), pieces.end(), back_inserter(m_Pieces));
 }
 
 Field::CellType Field::GetCell(const int x, const int y) const
@@ -202,20 +236,33 @@ Field::Position Field::GetGoalPosition() const
 
 void Field::Serialize(std::string& dist)
 {
+    dist.clear();
     dist.append(std::to_string(m_Width));
     dist.append(",");
     dist.append(std::to_string(m_Height));
     dist.append(",");
 
+    std::string cells;
     for (int y = 0; y < m_Height; ++y)
     {
         for (int x = 0; x < m_Width; ++x)
         {
-            dist.append(std::to_string(
+            cells.append(std::to_string(
                 static_cast<int>(m_Field[y][x]))
             );
         }
     }
+
+    
+    for (int count = 0, size = m_Pieces.size(); count < size; ++count)
+    {
+        auto& piece = m_Pieces[count];
+        int index = m_Width * piece.y + piece.x;
+        cells[index] = 'a' + count;
+    }
+
+    std::string encoded;
+    dist.append(game::Utility::EncodeRunLength(cells, encoded));
 }
 
 void Field::CreateField(const int width, const int height)

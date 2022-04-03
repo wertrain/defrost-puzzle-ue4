@@ -56,7 +56,7 @@ int main()
 
     field->Dump(Dump);
 
-    std::string serialized;
+    std::string serialized, encoded;
     field->Serialize(serialized);
 
     std::cout << serialized << std::endl;
