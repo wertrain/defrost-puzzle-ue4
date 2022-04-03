@@ -19,6 +19,7 @@ ADefrostPuzzlePawn::ADefrostPuzzlePawn(const FObjectInitializer& ObjectInitializ
 	ActivePieceIndex = 0;
 	CurrentPieceIndex = 0;
 	CurrentPieceDirection = EPuzzleDirection::Up;
+	CanMoveCurrentDirection = 0;
 	SelectionMode = PuzzleBlockSelectMode::None;
 }
 
@@ -28,19 +29,26 @@ void ADefrostPuzzlePawn::Tick(float DeltaSeconds)
 
 	if (PuzzleBlockGrid)
 	{
-		switch (SelectionMode)
+		if (PuzzleBlockGrid->CanPlayerControllable())
 		{
-		case ADefrostPuzzlePawn::PuzzleBlockSelectMode::None:
-			break;
-		case ADefrostPuzzlePawn::PuzzleBlockSelectMode::Piece:
-			PuzzleBlockGrid->SetHighlightBlock(ActivePieceIndex);
-			break;
-		case ADefrostPuzzlePawn::PuzzleBlockSelectMode::Direction:
-			PuzzleBlockGrid->SetHighlightDirection(CurrentPieceIndex, CurrentPieceDirection);
-			PuzzleBlockGrid->SetPieceDirection(CurrentPieceIndex, CurrentPieceDirection);
-			break;
-		default:
-			break;
+			switch (SelectionMode)
+			{
+			case ADefrostPuzzlePawn::PuzzleBlockSelectMode::None:
+				break;
+			case ADefrostPuzzlePawn::PuzzleBlockSelectMode::Piece:
+				PuzzleBlockGrid->SetHighlightBlock(ActivePieceIndex);
+				break;
+			case ADefrostPuzzlePawn::PuzzleBlockSelectMode::Direction:
+				CanMoveCurrentDirection = PuzzleBlockGrid->SetHighlightDirection(CurrentPieceIndex, CurrentPieceDirection) - 1;
+				PuzzleBlockGrid->SetPieceDirection(CurrentPieceIndex, CurrentPieceDirection);
+				break;
+			default:
+				break;
+			}
+		}
+		else
+		{
+
 		}
 	}
 	else
@@ -123,6 +131,20 @@ void ADefrostPuzzlePawn::RedoPiece()
 		PuzzleBlockGrid->UpdatePuzzlePiecesMesh();
 		PuzzleBlockGrid->SetScore(command.AfterScore);
 	}
+}
+
+
+FText ADefrostPuzzlePawn::GetHandsCode() const
+{
+	std::string hands;
+
+	for (auto& command : PieceCommands)
+	{
+		hands.push_back('0' + command.PieceIndex);
+		hands.push_back('0' + static_cast<uint8>(command.PieceDirection));
+	}
+
+	return FText::FromString(hands.c_str());
 }
 
 void ADefrostPuzzlePawn::OnResetVR()
@@ -210,6 +232,8 @@ void ADefrostPuzzlePawn::TraceForBlock(const FVector& Start, const FVector& End,
 
 void ADefrostPuzzlePawn::OnBlockMeshClicked(ADefrostPuzzleBlock* ClickedBlock, const std::pair<int32, int32>& position, const int index)
 {
+	if (!PuzzleBlockGrid->CanPlayerControllable()) return;
+
 	switch (SelectionMode)
 	{
 	case ADefrostPuzzlePawn::PuzzleBlockSelectMode::None:
@@ -219,6 +243,7 @@ void ADefrostPuzzlePawn::OnBlockMeshClicked(ADefrostPuzzleBlock* ClickedBlock, c
 		break;
 	case ADefrostPuzzlePawn::PuzzleBlockSelectMode::Direction:
 	{
+		if (CanMoveCurrentDirection == 0) return;
 		PieceCommand command;
 		command.PieceIndex = CurrentPieceIndex;
 		command.PieceDirection = CurrentPieceDirection;
@@ -241,5 +266,7 @@ void ADefrostPuzzlePawn::OnBlockMeshClicked(ADefrostPuzzleBlock* ClickedBlock, c
 
 void ADefrostPuzzlePawn::OnPieceMeshClicked(ADefrostPuzzlePiece* ClickedPiece, const std::pair<int32, int32>& position, const int index)
 {
+	if (!PuzzleBlockGrid->CanPlayerControllable()) return;
+
 	CurrentPieceIndex = index;
 }

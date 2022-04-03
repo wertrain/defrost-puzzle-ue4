@@ -6,6 +6,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInstance.h"
+#include <random>
 
 const float ADefrostPuzzleBlock::BlockSize = 10.f;
 
@@ -15,7 +16,12 @@ ADefrostPuzzleBlock::ADefrostPuzzleBlock()
 	struct FConstructorStatics
 	{
 		ConstructorHelpers::FObjectFinderOptional<UStaticMesh> BlockMesh;
-		ConstructorHelpers::FObjectFinderOptional<UStaticMesh> RockMesh;
+		ConstructorHelpers::FObjectFinderOptional<UStaticMesh> RockMeshA;
+		ConstructorHelpers::FObjectFinderOptional<UStaticMesh> RockMeshB;
+		ConstructorHelpers::FObjectFinderOptional<UStaticMesh> RockMeshC;
+		ConstructorHelpers::FObjectFinderOptional<UStaticMesh> RockMeshD;
+		ConstructorHelpers::FObjectFinderOptional<UStaticMesh> RockMeshE;
+		ConstructorHelpers::FObjectFinderOptional<UStaticMesh> RockMeshF;
 		ConstructorHelpers::FObjectFinderOptional<UMaterial> BaseMaterial;
 		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> RockMaterial;
 		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> FrozenMaterial;
@@ -25,7 +31,12 @@ ADefrostPuzzleBlock::ADefrostPuzzleBlock()
 		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> OrangeMaterial;
 		FConstructorStatics()
 			: BlockMesh(TEXT("/Game/Puzzle/Meshes/SM_PuzzleCube.SM_PuzzleCube"))
-			, RockMesh(TEXT("/Game/Puzzle/Rock/SM_Rock_A.SM_Rock_A"))
+			, RockMeshA(TEXT("/Game/Puzzle/Rock/SM_Rock_A.SM_Rock_A"))
+			, RockMeshB(TEXT("/Game/Puzzle/Rock/SM_Rock_B.SM_Rock_B"))
+			, RockMeshC(TEXT("/Game/Puzzle/Rock/SM_Rock_C.SM_Rock_C"))
+			, RockMeshD(TEXT("/Game/Puzzle/Rock/SM_Rock_D.SM_Rock_D"))
+			, RockMeshE(TEXT("/Game/Puzzle/Rock/SM_Rock_E.SM_Rock_E"))
+			, RockMeshF(TEXT("/Game/Puzzle/Rock/SM_Rock_F.SM_Rock_F"))
 			, BaseMaterial(TEXT("/Game/Puzzle/Meshes/M_CubeBase.M_CubeBase"))
 			, RockMaterial(TEXT("/Game/Puzzle/Meshes/MI_CubeRock.MI_CubeRock"))
 			, FrozenMaterial(TEXT("/Game/Puzzle/Meshes/MI_CubeFrozen.MI_CubeFrozen"))
@@ -63,7 +74,13 @@ ADefrostPuzzleBlock::ADefrostPuzzleBlock()
 	FrozenMaterial = ConstructorStatics.FrozenMaterial.Get();
 	HardFrozenMaterial = ConstructorStatics.HardFrozenMaterial.Get();
 	MeltedMaterial = ConstructorStatics.MeltedMaterial.Get();
-	RockMesh = ConstructorStatics.RockMesh.Get();
+
+	RockMeshs.Add(ConstructorStatics.RockMeshA.Get());
+	RockMeshs.Add(ConstructorStatics.RockMeshB.Get());
+	RockMeshs.Add(ConstructorStatics.RockMeshC.Get());
+	RockMeshs.Add(ConstructorStatics.RockMeshD.Get());
+	RockMeshs.Add(ConstructorStatics.RockMeshE.Get());
+	RockMeshs.Add(ConstructorStatics.RockMeshF.Get());
 }
 
 void ADefrostPuzzleBlock::BlockClicked(UPrimitiveComponent* ClickedComp, FKey ButtonClicked)
@@ -95,9 +112,14 @@ void ADefrostPuzzleBlock::SetBlockType(const EBlockType Type)
 
 void ADefrostPuzzleBlock::ChangeRockMesh()
 {
-	BlockMesh->SetStaticMesh(RockMesh);
-	const float scale = 0.01f;
-	BlockMesh->SetRelativeScale3D(FVector(1.f * scale, 1.f * scale, 1.f * scale));
+	std::mt19937 mt { std::random_device{}() };
+	std::uniform_int_distribution<int> r(0, RockMeshs.Num() - 1);
+
+	int rockIndex = r(mt);
+	float scales[] = { 0.014f, 0.025f, 0.025f, 0.015f, 0.016f, 0.015f };
+
+	BlockMesh->SetStaticMesh(RockMeshs[rockIndex]);
+	BlockMesh->SetRelativeScale3D(FVector(1.f * scales[rockIndex], 1.f * scales[rockIndex], 1.f * scales[rockIndex]));
 }
 
 EBlockType ADefrostPuzzleBlock::GetBlockType() const

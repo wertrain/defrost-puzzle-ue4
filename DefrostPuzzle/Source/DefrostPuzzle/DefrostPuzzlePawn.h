@@ -30,6 +30,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category=Grid)
 	void RedoPiece();
 
+	UFUNCTION(BlueprintCallable, Category=Grid)
+	FText GetHandsCode() const;
+
+
 protected:
 	void OnResetVR();
 	void TriggerClick();
@@ -64,6 +68,7 @@ private:
 	int32 ActivePieceIndex;
 	int32 CurrentPieceIndex;
 	EPuzzleDirection CurrentPieceDirection;
+	int32 CanMoveCurrentDirection;
 	PuzzleBlockSelectMode SelectionMode;
 	TArray<PieceCommand> PieceCommands;
 	TArray<PieceCommand> UndoRedoCommands;

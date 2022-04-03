@@ -49,6 +49,13 @@ public:
 	UPROPERTY(Category=Grid, EditAnywhere, BlueprintReadOnly)
 	float BlockSpacing;
 
+public:
+	UFUNCTION(BlueprintImplementableEvent, Category = Grid)
+	void OnGameFinished();
+
+	UFUNCTION(BlueprintCallable, Category=Grid)
+	FText GetFieldCode() const;
+
 protected:
 	// Begin AActor interface
 	virtual void BeginPlay() override;
@@ -57,7 +64,6 @@ protected:
 	// End AActor interface
 
 public:
-
 	/** Handle the block being clicked */
 	void AddScore();
 	void ResetScore();
@@ -80,7 +86,9 @@ public:
 	// 指定されたインデックスのピースから、指定されたブロックをハイライトを設定
 	void SetHighlightBlock(const int PieceIndex);
 	// 指定されたインデックスのピースから、指定された方向のブロックにハイライトを設定
-	void SetHighlightDirection(const int PieceIndex, const EPuzzleDirection Direction);
+	int SetHighlightDirection(const int PieceIndex, const EPuzzleDirection Direction);
+	// ハイライトされたブロックをすべてリセット
+	void ResetHighlightAll();
 	// 指定されたインデックスのピースを、指定された方向に向く
 	void SetPieceDirection(const int PieceIndex, const EPuzzleDirection Direction);
 	// 指定されたピースの位置（x, y）を設定
@@ -93,8 +101,12 @@ public:
 	void UpdatePuzzlePiecesMesh();
 	// 指定されたインデックスがゴールかを判定
 	bool IsGoal(const int Index) const;
+	// 指定されたイ位置の周囲にゴールがあるかを判定
+	bool CheckGoal(const game::Field::Position& Position) const;
 	// 指定されたブロックの上にピースが乗っているかを判定
 	int IsOnPiece(const class ADefrostPuzzleBlock* Block) const;
+	// 現在が操作可能かを取得
+	bool CanPlayerControllable() const;
 	// リスナーを追加
 	void AddListener(IDefrostPuzzleBlockGridListener* Listener);
 
@@ -121,6 +133,8 @@ private:
 		virtual ~PuzzleBlockGridSequenceBase() {}
 		virtual void Update(float DeltaSeconds) = 0;
 		virtual bool CanPlayerControl() const { return false; }
+	private:
+		PuzzleBlockGridSequenceBase() {}
 	protected:
 		ADefrostPuzzleBlockGrid* Owner;
 	};
@@ -157,8 +171,20 @@ private:
 		FVector StartPieceLocation;
 		FVector EndPieceLocation;
 		float CurrentTime;
+		float TargetTime;
 		InSequenceId InSequence;
 		float AnimTime;
+		bool IsGoal;
+	};
+
+	class SequenceFinished : public PuzzleBlockGridSequenceBase
+	{
+	public:
+		SequenceFinished(ADefrostPuzzleBlockGrid* Owner) : PuzzleBlockGridSequenceBase(Owner) {}
+		void Update(float DeltaSeconds) override;
+
+	private:
+		float CurrentTime;
 	};
 
 	template <class SEQUENCE>

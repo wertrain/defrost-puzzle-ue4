@@ -66,9 +66,23 @@ public:
 	UPROPERTY()
 	class UMaterialInstance* OrangeMaterial;
 
-	/** Pointer to material */
+	/** Pointer to Mesh */
 	UPROPERTY()
-	class UStaticMesh* RockMesh;
+	TArray<class UStaticMesh*> RockMeshs;
+
+	/** Pointer to Mesh */
+	UPROPERTY()
+	class UStaticMesh* RockMeshA;
+
+	/** Pointer to Mesh */
+	UPROPERTY()
+		class UStaticMesh* RockMeshB;
+	/** Pointer to Mesh */
+	UPROPERTY()
+		class UStaticMesh* RockMeshC;
+	/** Pointer to Mesh */
+	UPROPERTY()
+		class UStaticMesh* RockMeshD;
 
 	/** Grid that owns us */
 	UPROPERTY()

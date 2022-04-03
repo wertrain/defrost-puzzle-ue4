@@ -1,8 +1,11 @@
 #include "Field.h"
 
+#include "Utility.h"
 #include <random>
 #include <iterator>
 #include <numeric>
+#include <istream>
+#include <sstream> 
 
 namespace game
 {
@@ -11,8 +14,8 @@ Field::Field()
     : m_Field(nullptr)
     , m_Width(0)
     , m_Height(0)
-    , m_Islands()
-    , m_GoalIndex(0)
+    , m_Goal(0, 0)
+    , m_Pieces()
 {
 
 }
@@ -75,16 +78,85 @@ bool Field::Create(const CreateParameter& param)
     // 　■■□
     // 　■□□
     // 　□□□
-    // 　というような形となり、スタートとゴールはここに配置される）
+    // 　というような形となり、ゴールはここに配置される）
     CreateIsland(param.level);
+
+    return true;
+}
+
+bool Field::CreateFromString(const char* serialized)
+{
+    auto raw = std::string(serialized);
+
+    std::stringstream ss{ raw };
+    std::string buf;
+
+    std::vector<std::string> v;
+    while (std::getline(ss, buf, ','))
+    {
+        v.push_back(buf);
+    }
+
+    if (v.size() != 3)
+    {
+        return false;
+    }
+
+    CreateField(atoi(v[0].c_str()), atoi(v[1].c_str()));
+
+    std::string decoded;
+    game::Utility::DecodeRunLength(v[2], decoded);
+
+    if (decoded.length() != (m_Width * m_Height))
+    {
+        return false;
+    }
+
+    game::Field::Position pieces[32];
+    int pieceCount = 0;
+
+    const char* p = decoded.c_str();
+    for (int y = 0; y < m_Height; ++y)
+    {
+        for (int x = 0; x < m_Width; ++x)
+        {
+            int index = m_Width * y + x;
+
+            if (p[index] >= 'a' && p[index] <= 'z')
+            {
+                int pieceIndex = p[index] - 'a';
+                pieces[pieceIndex].x = x;
+                pieces[pieceIndex].y = y;
+                ++pieceCount;
+
+                m_Field[y][x] = CellType::Piece;
+            }
+            else
+            {
+                CellType cell = static_cast<CellType>(p[index] - '0');
+
+                if (cell == CellType::Goal)
+                {
+                    m_Goal = Position(x, y);
+                }
+
+                m_Field[y][x] = cell;
+            }
+        }
+    }
+
+    m_Pieces.clear();
+    m_Pieces.resize(pieceCount);
+    for (int count = 0; count < pieceCount; ++count)
+    {
+        m_Pieces[count] = pieces[count];
+    }
 
     return true;
 }
 
 void Field::Destroy()
 {
-    m_Islands.clear();
-
     DestroyField();
 }
 
@@ -145,6 +217,9 @@ void Field::PutPieces(std::vector<Position>& pieces, const int putNum)
             --count;
         }
     }
+
+    m_Pieces.clear();
+    copy(pieces.begin(), pieces.end(), back_inserter(m_Pieces));
 }
 
 Field::CellType Field::GetCell(const int x, const int y) const
@@ -156,7 +231,38 @@ Field::CellType Field::GetCell(const int x, const int y) const
 
 Field::Position Field::GetGoalPosition() const
 {
-    return static_cast<Field::Position>(m_Islands[m_GoalIndex]);
+    return m_Goal;
+}
+
+void Field::Serialize(std::string& dist) const
+{
+    dist.clear();
+    dist.append(std::to_string(m_Width));
+    dist.append(",");
+    dist.append(std::to_string(m_Height));
+    dist.append(",");
+
+    std::string cells;
+    for (int y = 0; y < m_Height; ++y)
+    {
+        for (int x = 0; x < m_Width; ++x)
+        {
+            cells.append(std::to_string(
+                static_cast<int>(m_Field[y][x]))
+            );
+        }
+    }
+
+    
+    for (int count = 0, size = m_Pieces.size(); count < size; ++count)
+    {
+        auto& piece = m_Pieces[count];
+        int index = m_Width * piece.y + piece.x;
+        cells[index] = 'a' + count;
+    }
+
+    std::string encoded;
+    dist.append(game::Utility::EncodeRunLength(cells, encoded));
 }
 
 void Field::CreateField(const int width, const int height)
@@ -224,6 +330,25 @@ void Field::CreateIsland(const int islandNum)
         return true;
     };
 
+    // 小島を表す構造体
+    struct Island : public Position
+    {
+        enum class Corner : uint8_t
+        {
+            LeftUp,
+            RightUp,
+            LeftBottom,
+            RightBottom,
+        };
+        Corner corner;
+
+        Island(int x, int y, Corner corner)
+            : Position(x, y)
+            , corner(corner)
+        {}
+    };
+    std::vector<Island> islands;
+
     int level = islandNum;
     while (level > 0)
     {
@@ -260,7 +385,7 @@ void Field::CreateIsland(const int islandNum)
             }
 
             const Island island(tempX, tempY, corner);
-            m_Islands.push_back(island);
+            islands.push_back(island);
         }
     }
 
@@ -270,8 +395,9 @@ void Field::CreateIsland(const int islandNum)
         std::iota(v.begin(), v.end(), 0);
         std::shuffle(v.begin(), v.end(), mt);
 
-        m_GoalIndex = v[0];
-        m_Field[m_Islands[m_GoalIndex].y][m_Islands[m_GoalIndex].x] = CellType::Goal;
+        int goalIndex = v.front();
+        m_Goal = static_cast<Position>(islands.at(goalIndex));
+        m_Field[m_Goal.y][m_Goal.x] = CellType::Goal;
     }
 }
 
